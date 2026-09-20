@@ -1,0 +1,2677 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CallShadow | Real-Time Voice Biometrics & Deepfake Defense</title>
+    <meta name="description"
+        content="The AI voice model platform powering next-gen voice agents, text to speech, voice cloning, and AI voice changer.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css?v=2.6.0">
+
+    <!-- Client Scripts (Cache-Busted for instant reload) -->
+    <script src="js/config.js?v=2.6.0"></script>
+    <script src="js/mockData.js?v=2.6.0"></script>
+    <script src="js/audioVisualizer.js?v=2.6.0"></script>
+    <script src="js/trustEngine.js?v=2.6.0"></script>
+    <script src="js/apiService.js?v=2.6.0"></script>
+    <script src="js/liveRecognitionService.js?v=1.0.2"></script>
+    <script src="js/liveGraph.js?v=1.0.2"></script>
+    <script src="js/app.js?v=2.6.0"></script>
+</head>
+
+<body>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <!-- Real-Time Analysis & Synthesis Progress Overlay -->
+    <div id="analysis-progress-overlay" class="analysis-progress-overlay hidden">
+        <div class="analysis-progress-backdrop"></div>
+        <div class="analysis-progress-card">
+            <!-- Glowing Biometric Pulse Icon -->
+            <div class="analysis-pulse-container">
+                <div class="analysis-pulse-ring ring-1"></div>
+                <div class="analysis-pulse-ring ring-2"></div>
+                <div class="analysis-pulse-core">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path d="M12 2v20M17 5v14M7 8v8M22 10v4M2 10v4" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Title & Subtitle -->
+            <div class="analysis-progress-header">
+                <span class="analysis-progress-badge">AI FORENSIC ENGINE</span>
+                <h3 id="analysis-progress-title" class="analysis-progress-title">Synthesizing Neural Audio...</h3>
+                <p id="analysis-progress-subtitle" class="analysis-progress-subtitle">Extracting deepfake vocal tract formants</p>
+            </div>
+
+            <!-- Main Progress Bar & Metrics -->
+            <div class="analysis-progress-bar-container">
+                <div class="analysis-progress-meta">
+                    <span id="analysis-progress-status-text" class="analysis-progress-status-text">Processing audio pipeline...</span>
+                    <span id="analysis-progress-percent" class="analysis-progress-percent">0%</span>
+                </div>
+                <div class="analysis-progress-track">
+                    <div id="analysis-progress-fill" class="analysis-progress-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Multi-Stage Pipeline Step Tracker -->
+            <div id="analysis-pipeline-steps" class="analysis-pipeline-steps">
+                <div class="pipeline-step-item active" data-step="0">
+                    <div class="step-indicator"><span class="step-dot"></span></div>
+                    <span class="step-label">16kHz Preprocessing &amp; Normalization</span>
+                </div>
+                <div class="pipeline-step-item" data-step="1">
+                    <div class="step-indicator"><span class="step-dot"></span></div>
+                    <span class="step-label">512-dim Neural Latent Embeddings (Wav2Vec2)</span>
+                </div>
+                <div class="pipeline-step-item" data-step="2">
+                    <div class="step-indicator"><span class="step-dot"></span></div>
+                    <span class="step-label">Spectral Flux &amp; Harmonic Drift</span>
+                </div>
+                <div class="pipeline-step-item" data-step="3">
+                    <div class="step-indicator"><span class="step-dot"></span></div>
+                    <span class="step-label">3-Model Trust Score Fusion &amp; Audit</span>
+                </div>
+            </div>
+
+            <!-- Bottom Reassuring Notice -->
+            <div class="analysis-progress-footer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span>Synthesizing neural biomarkers. Please keep this screen open.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         1. LANDING PAGE VIEW (#landing-view - SCREENSHOT 1 TARGET DESIGN)
+         ====================================================================== -->
+    <div id="landing-view" class="landing-view">
+
+        <!-- Outer Margined Container -->
+        <div class="hero-outer-container">
+
+            <!-- Hero Rounded Main Container / Card -->
+            <div class="hero-rounded-card">
+
+                <!-- Ambient Waveform Rings Background Overlay -->
+                <div class="hero-ambient-rings"></div>
+
+                <!-- Top Navbar Embedded inside Hero Container -->
+                <header class="hero-navbar">
+                    <!-- Brand Logo -->
+                    <a href="#landing" class="brand-logo-voice" onclick="app.navigateTo('landing')">
+                        <div class="brand-spark-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path d="M4 10v4" />
+                                <path d="M8 6v12" />
+                                <path d="M12 2v20" />
+                                <path d="M16 8v8" />
+                                <path d="M20 11v2" />
+                            </svg>
+                        </div>
+                        <span class="brand-title-text">CallShadow</span>
+                    </a>
+
+                    <!-- Center Navigation Menu: Search, Features, Dashboard, Working -->
+                    <nav class="nav-center-menu">
+                        <a href="#search" id="nav-link-search" onclick="app.scrollToSection('search'); return false;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.2">
+                                <circle cx="11" cy="11" r="8" />
+                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                            Search
+                        </a>
+                        <a href="#features" id="nav-link-features"
+                            onclick="app.scrollToSection('features'); return false;">Features</a>
+                        <a href="#dashboard" id="nav-link-dashboard"
+                            onclick="app.navigateTo('dashboard'); return false;">Dashboard</a>
+                        <a href="#working" id="nav-link-working"
+                            onclick="app.scrollToSection('working'); return false;">Working</a>
+                    </nav>
+
+                    <!-- Right Actions: Dynamic Auth State (Start for Free / Login / Logout) -->
+                    <div class="nav-right-actions" id="nav-auth-actions">
+                        <button class="nav-auth-login-link" onclick="app.navigateTo('login')">Log In</button>
+                        <button class="btn-white-pill" onclick="app.handleStartForFree()">Start for Free</button>
+                    </div>
+                </header>
+
+                <!-- Hero Main Stage Content (Exact Layout of Screenshot 1) -->
+                <div class="hero-stage">
+
+                    <!-- Left Column: Small uppercase statement, feature pills, massive heading -->
+                    <div class="hero-left-column">
+                        <div>
+                            <div class="hero-top-statement">
+                                Hear the signal. Detect the threat.Verify voices with AI-powered authenticity and risk
+                                analysis.
+                            </div>
+
+                            <div class="hero-feature-pills">
+                                <span class="hero-glass-pill">Risk Analysis</span>
+                                <span class="hero-glass-pill">Security</span>
+                                <span class="hero-glass-pill">Deepfake</span>
+                            </div>
+                        </div>
+
+                        <h1 class="hero-massive-title">
+                            Realistic AI Voice<br>
+                            Agents &amp; Voice Changer
+                        </h1>
+                    </div>
+
+                    <!-- Center / Right Visual Stage: AI Robot Face + 3 Floating Glass Cards -->
+                    <div class="hero-visual-stage">
+
+                        <!-- Center Futuristic AI Robot Face Visual -->
+                        <div class="hero-robot-image-wrapper">
+                            <img src="assets/voice_ai_hero.jpg" alt="AI Voice Cyborg Model" class="hero-robot-img">
+                        </div>
+
+                        <!-- Floating Card 1: Top-Right "Video Caption" -->
+                        <div class="floating-card-video-caption">
+                            <div class="video-caption-header">
+                                <span class="video-caption-title">Video Caption</span>
+                                <span class="video-subtitle-badge">Subtitle</span>
+                            </div>
+                            <div class="video-dropzone-box" onclick="app.navigateTo('upload')">
+                                <div class="video-dropzone-icon">☁</div>
+                                <div class="video-dropzone-main-text">Drag And Drop Your Video</div>
+                                <div class="video-dropzone-sub-text">Size 1 GB</div>
+                            </div>
+                            <button class="video-generate-btn" onclick="app.navigateTo('upload')">Generate</button>
+                        </div>
+
+                        <!-- Floating Card 2: Center-Right "Intelligent Interview Documentation" -->
+                        <div class="floating-card-interview-doc">
+                            <div class="interview-doc-title">
+                                Intelligent Interview<br>Documentation
+                            </div>
+                            <div class="interview-audio-row">
+                                <span class="interview-rec-id">Rec-100823</span>
+                                <span class="interview-rec-time">3:25/10:21</span>
+                            </div>
+                            <!-- Audio Equalizer Bars Visual -->
+                            <div class="soundwave-bars-visual">
+                                <div class="soundwave-bar" style="height: 12px;"></div>
+                                <div class="soundwave-bar" style="height: 20px;"></div>
+                                <div class="soundwave-bar" style="height: 16px;"></div>
+                                <div class="soundwave-bar" style="height: 26px;"></div>
+                                <div class="soundwave-bar" style="height: 30px;"></div>
+                                <div class="soundwave-bar" style="height: 18px;"></div>
+                                <div class="soundwave-bar" style="height: 24px;"></div>
+                                <div class="soundwave-bar" style="height: 28px;"></div>
+                                <div class="soundwave-bar" style="height: 14px;"></div>
+                                <div class="soundwave-bar" style="height: 22px;"></div>
+                                <div class="soundwave-bar" style="height: 19px;"></div>
+                                <div class="soundwave-bar" style="height: 27px;"></div>
+                                <div class="soundwave-bar" style="height: 15px;"></div>
+                                <div class="soundwave-bar" style="height: 23px;"></div>
+                                <div class="soundwave-bar" style="height: 18px;"></div>
+                                <div class="soundwave-bar" style="height: 10px;"></div>
+                            </div>
+                            <div class="interview-playback-controls">
+                                <div class="control-circle-btn">◷</div>
+                                <div class="control-circle-btn">◁◁</div>
+                                <div class="control-circle-btn play" onclick="app.loadDemoScenario('genuine')">▶</div>
+                            </div>
+                        </div>
+
+                        <!-- Floating Card 3: Bottom-Right "Consistency Check" -->
+                        <div class="floating-card-consistency">
+                            <div class="consistency-title">Consistency Check</div>
+
+                            <div class="consistency-inner-box">
+                                <div class="consistency-box-header">
+                                    <span class="consistency-box-label">Total Questions Asked</span>
+                                    <span class="consistency-more-icon">⋮</span>
+                                </div>
+                                <div class="consistency-status-green">
+                                    ✓ 11 successfully answered
+                                </div>
+                            </div>
+
+                            <div class="consistency-inner-box">
+                                <div class="consistency-box-header">
+                                    <span class="consistency-box-label">Candidate Talk Time</span>
+                                    <span class="consistency-more-icon">⋮</span>
+                                </div>
+                                <div class="talk-time-list">
+                                    <span class="talk-intro">● 5% Introduction</span>
+                                    <span class="talk-disc">✓ 60% Discussion</span>
+                                    <span class="talk-outro">✓ 16% Outro</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ==================================================================
+             SECTION 1: SEARCH & QUICK EXPLORATION BAR
+             ================================================================== -->
+        <section id="search" class="content-section-wrap" style="padding-top: 30px; padding-bottom: 20px;">
+            <div
+                style="background: #ffffff; border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: var(--shadow-sm); flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1; max-width: 600px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.5">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input type="text" class="form-input"
+                        placeholder="Search voices, acoustic neural models, tools, or documentation..."
+                        style="width: 100%; border: none; background: transparent; font-size: 13.5px;"
+                        onkeyup="if(event.key==='Enter') app.showToast('Searching neural model repository for: ' + this.value)">
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; color: var(--text-muted);">Popular:</span>
+                    <button class="btn btn-secondary btn-sm" onclick="app.navigateTo('live')">Live Voice</button>
+                    <button class="btn btn-secondary btn-sm" onclick="app.navigateTo('upload')">Audio Scanner</button>
+                    <button class="btn btn-secondary btn-sm" onclick="app.navigateTo('enroll')">Voice Cloning</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             SECTION 2: CORE CAPABILITIES (2 MASTER PILLARS)
+             ================================================================== -->
+        <section id="features" class="content-section-wrap">
+            <div class="section-center-header">
+                <span class="section-badge-pill">Core Capabilities</span>
+                <h2 class="section-headline">Everything You Need For Next-Gen Voice AI</h2>
+                <p class="section-description">A unified neural platform engineered around real-time acoustic voice
+                    analysis and continuous behavioral consistency verification.</p>
+            </div>
+
+            <!-- Two Master Pillars Grid -->
+            <div class="features-two-pillars">
+
+                <!-- Pillar 1: Voice Analysis -->
+                <div class="pillar-master-card">
+                    <div>
+                        <div class="pillar-header-row">
+                            <div class="pillar-icon-box">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2">
+                                    <path d="M12 2v20M17 5v14M7 5v14M2 9v6M22 9v6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="pillar-category-tag">Neural Acoustic Forensics</div>
+                                <h3 class="pillar-master-title">Voice Analysis</h3>
+                            </div>
+                        </div>
+                        <p class="pillar-master-desc">
+                            Deep neural acoustic inspection tracking vocal tract resonance, phase jitter, and frequency
+                            spectrum variations in volatile memory to expose synthetic manipulation in sub-40
+                            milliseconds.
+                        </p>
+
+                        <div class="sub-features-grid-2x2">
+                            <!-- Sub 1 -->
+                            <div class="sub-feature-item">
+                                <div class="sub-feature-header">
+                                    <div class="sub-feature-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                        </svg>
+                                    </div>
+                                    <span class="sub-feature-title">Live Voice &amp; Mic Stream</span>
+                                </div>
+                                <span class="sub-feature-text">Real-time Web Audio PCM analyzer evaluating phase
+                                    coherence and spectral anomalies continuously.</span>
+                            </div>
+
+                            <!-- Sub 2 -->
+                            <div class="sub-feature-item">
+                                <div class="sub-feature-header">
+                                    <div class="sub-feature-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="17 8 12 3 7 8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        </svg>
+                                    </div>
+                                    <span class="sub-feature-title">Multi-Format Deepfake Scanner</span>
+                                </div>
+                                <span class="sub-feature-text">High-precision batch forensic scanning for WAV, MP3, and
+                                    FLAC to detect AI clones and vocoder artifacts.</span>
+                            </div>
+
+                            <!-- Sub 3 -->
+                            <div class="sub-feature-item">
+                                <div class="sub-feature-header">
+                                    <div class="sub-feature-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                            <circle cx="9" cy="7" r="4" />
+                                        </svg>
+                                    </div>
+                                    <span class="sub-feature-title">512-dim Biometric Embedding</span>
+                                </div>
+                                <span class="sub-feature-text">ECAPA-TDNN one-way latent vector extraction comparing
+                                    cosine similarity against enrolled voiceprints.</span>
+                            </div>
+
+                            <!-- Sub 4 -->
+                            <div class="sub-feature-item">
+                                <div class="sub-feature-header">
+                                    <div class="sub-feature-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                                        </svg>
+                                    </div>
+                                    <span class="sub-feature-title">Noise Filtration &amp; De-Reverb</span>
+                                </div>
+                                <span class="sub-feature-text">Neural spectral de-noising isolating primary vocal
+                                    frequencies from background chatter and environmental noise.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pillar-actions-footer">
+                        <button class="btn btn-primary btn-sm" onclick="app.navigateTo('live')">Open Live Analyzer
+                            →</button>
+                        <button class="btn btn-secondary btn-sm" onclick="app.navigateTo('upload')">Scan Audio
+                            File</button>
+                    </div>
+                </div>
+
+                <!-- Pillar 2: Consistency Checking -->
+                <div class="pillar-master-card">
+                    <div>
+                        <div class="pillar-header-row">
+                            <div class="pillar-icon-box">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                    <line x1="16" y1="13" x2="8" y2="13" />
+                                    <line x1="16" y1="17" x2="8" y2="17" />
+                                    <polyline points="10 9 9 9 8 9" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="pillar-category-tag">Session &amp; Identity Auditing</div>
+                                <h3 class="pillar-master-title">Consistency Checking</h3>
+                            </div>
+                        </div>
+                        <p class="pillar-master-desc">
+                            Continuous biometric verification and behavioral analytics tracking speaker identity
+                            continuity, interview talk-time ratios, and explainable multi-signal trust scoring across
+                            prolonged calls.
+                        </p>
+
+                        <div class="sub-features-grid-2x2">
+                            <!-- Sub 1 -->
+                            <div class="sub-feature-item">
+                                <div class="sub-feature-header">
+                                    <div class="sub-feature-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                        </svg>
+                                    </div>
+                                    <span class="sub-feature-title">Speaker Identity Continuity</span>
+                                </div>
+                                <span class="sub-feature-text">Real-time speaker drift detection preventing
+                                    mid-conversation handoffs, deepfake injections, and replay attacks.</span>
+                            </div>
+
+                            <!-- Sub 2 -->
+                            <div class="sub-feature-item">
+                                <div class="sub-feature-header">
+                                    <div class="sub-feature-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <polyline points="12 6 12 12 16 14" />
+                                        </svg>
+                                    </div>
+                                    <span class="sub-feature-title">Interview Talk-Time Auditing</span>
+                                </div>
+                                <span class="sub-feature-text">Automated meeting analytics measuring
+                                    candidate-to-interviewer talk distributions and question completeness.</span>
+                            </div>
+
+                            <!-- Sub 3 -->
+                            <div class="sub-feature-item">
+                                <div class="sub-feature-header">
+                                    <div class="sub-feature-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                                            <line x1="3" y1="9" x2="21" y2="9" />
+                                            <line x1="9" y1="21" x2="9" y2="9" />
+                                        </svg>
+                                    </div>
+                                    <span class="sub-feature-title">Explainable Trust Engine</span>
+                                </div>
+                                <span class="sub-feature-text">Transparent 0–100 additive score waterfall providing
+                                    forensic rationale instead of opaque black-box outputs.</span>
+                            </div>
+
+                            <!-- Sub 4 -->
+                            <div class="sub-feature-item">
+                                <div class="sub-feature-header">
+                                    <div class="sub-feature-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <rect x="2" y="2" width="20" height="8" rx="2" />
+                                            <rect x="2" y="14" width="20" height="8" rx="2" />
+                                            <line x1="6" y1="6" x2="6.01" y2="6" />
+                                            <line x1="6" y1="18" x2="6.01" y2="18" />
+                                        </svg>
+                                    </div>
+                                    <span class="sub-feature-title">Enterprise API &amp; Webhooks</span>
+                                </div>
+                                <span class="sub-feature-text">Direct REST and WebSocket interfaces with Python SDKs to
+                                    integrate verification into VoIP and contact centers.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pillar-actions-footer">
+                        <button class="btn btn-primary btn-sm" onclick="app.navigateTo('analysis')">Inspect Trust Engine
+                            →</button>
+                        <button class="btn btn-secondary btn-sm" onclick="app.navigateTo('enroll')">Enroll Biometric
+                            Profile</button>
+                    </div>
+                </div>
+
+            </div>
+            <!-- ==================================================================
+             SECTION 3: HOW IT WORKS (DIAGRAMMATIC ARCHITECTURE WORKFLOW)
+             ================================================================== -->
+            <section id="working" class="content-section-wrap">
+                <div class="section-center-header">
+                    <span class="section-badge-pill">Technical Dataflow</span>
+                    <h2 class="section-headline">How The Platform Works</h2>
+                    <p class="section-description">A diagrammatic end-to-end dataflow illustrating how raw speech
+                        waveforms are converted into multi-layered latent tensors, verified by neural backbones, and
+                        zeroized from memory.</p>
+                </div>
+
+                <!-- Diagrammatic Canvas Visual Container -->
+                <div class="diagram-canvas-wrap">
+
+                    <!-- Linear Flow Diagram with SVG Directional Connectors -->
+                    <div class="diagram-flow-track">
+
+                        <!-- Stage 1 Node -->
+                        <div class="diagram-stage-node">
+                            <span class="diagram-node-badge">STAGE 01</span>
+                            <div style="color: var(--orange-primary);">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2">
+                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                </svg>
+                            </div>
+                            <div class="diagram-node-title">Audio Ingestion</div>
+                            <span class="diagram-node-sub">PCM 16k/48k Stream</span>
+                        </div>
+
+                        <!-- Arrow 1 -->
+                        <div class="diagram-arrow-connector">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        </div>
+
+                        <!-- Stage 2 Node -->
+                        <div class="diagram-stage-node">
+                            <span class="diagram-node-badge">STAGE 02</span>
+                            <div style="color: var(--orange-primary);">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2">
+                                    <path d="M2 20h20" />
+                                    <path d="M5 20V10" />
+                                    <path d="M9 20V4" />
+                                    <path d="M13 20v-8" />
+                                    <path d="M17 20V7" />
+                                    <path d="M21 20v-6" />
+                                </svg>
+                            </div>
+                            <div class="diagram-node-title">Mel-Tensor Extraction</div>
+                            <span class="diagram-node-sub">128-Mel Bins • STFT</span>
+                        </div>
+
+                        <!-- Arrow 2 -->
+                        <div class="diagram-arrow-connector">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        </div>
+
+                        <!-- Stage 3 Node -->
+                        <div class="diagram-stage-node">
+                            <span class="diagram-node-badge">STAGE 03</span>
+                            <div style="color: var(--orange-primary);">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2">
+                                    <rect x="4" y="4" width="16" height="16" rx="2" />
+                                    <rect x="9" y="9" width="6" height="6" />
+                                    <line x1="9" y1="1" x2="9" y2="4" />
+                                    <line x1="15" y1="1" x2="15" y2="4" />
+                                    <line x1="9" y1="20" x2="9" y2="23" />
+                                    <line x1="15" y1="20" x2="15" y2="23" />
+                                    <line x1="20" y1="9" x2="23" y2="9" />
+                                    <line x1="20" y1="14" x2="23" y2="14" />
+                                    <line x1="1" y1="9" x2="4" y2="9" />
+                                    <line x1="1" y1="14" x2="4" y2="14" />
+                                </svg>
+                            </div>
+                            <div class="diagram-node-title">Dual-Inference Core</div>
+                            <span class="diagram-node-sub">Wav2Vec2 + ECAPA (512d)</span>
+                        </div>
+
+                        <!-- Arrow 3 -->
+                        <div class="diagram-arrow-connector">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        </div>
+
+                        <!-- Stage 4 Node -->
+                        <div class="diagram-stage-node">
+                            <span class="diagram-node-badge">STAGE 04</span>
+                            <div style="color: var(--status-safe);">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    <polyline points="9 12 11 14 15 10" />
+                                </svg>
+                            </div>
+                            <div class="diagram-node-title">Trust Verdict &amp; Purge</div>
+                            <span class="diagram-node-sub">Waterfall Score • RAM Cleared</span>
+                        </div>
+
+                    </div>
+
+                    <!-- Technical Specification Parameters -->
+                    <div class="diagram-specs-grid">
+                        <div class="diag-spec-card">
+                            <div class="diag-spec-label">Input Layer</div>
+                            <div class="diag-spec-val">TLS 1.3 Ingestion</div>
+                            <p class="diag-spec-desc">Captures live microphone audio, VoIP SIP payloads, or uploaded
+                                audio chunks directly into an isolated in-memory buffer.</p>
+                        </div>
+
+                        <div class="diag-spec-card">
+                            <div class="diag-spec-label">Feature Engineering</div>
+                            <div class="diag-spec-val">Short-Time FT (STFT)</div>
+                            <p class="diag-spec-desc">Transforms 16kHz audio into frequency spectrogram tensors,
+                                extracting fundamental frequency pitch contours, shimmer, and phase jitter.</p>
+                        </div>
+
+                        <div class="diag-spec-card">
+                            <div class="diag-spec-label">Neural Engine</div>
+                            <div class="diag-spec-val">Dual Model Ensemble</div>
+                            <p class="diag-spec-desc">Executes parallel inference across fine-tuned Wav2Vec2 vocoder
+                                classifiers and ECAPA-TDNN 512-dim cosine distance biometric evaluators.</p>
+                        </div>
+
+                        <div class="diag-spec-card">
+                            <div class="diag-spec-label">Synthesis &amp; Zeroization</div>
+                            <div class="diag-spec-val">&lt; 40ms Latency</div>
+                            <p class="diag-spec-desc">Outputs additive explainability score breakdown and cryptographic
+                                audit record while instantly scrubbing volatile RAM buffers.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ==================================================================
+             SECTION 7: INTERACTIVE DEMO SIMULATION
+             ================================================================== -->
+            <section id="demo-sec" class="content-section-wrap"
+                style="background: #ffffff; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);">
+                <div class="section-center-header">
+                    <span class="section-badge-pill">Interactive Simulation</span>
+                    <h2 class="section-headline">Test The Explainable Trust Engine</h2>
+                    <p class="section-description">Select any real-world simulation scenario to experience instant
+                        multi-factor scoring and biometric verification.</p>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" style="padding: 12px 20px; font-size: 13.5px;"
+                        onclick="app.loadDemoScenario('genuine')">
+                        <span
+                            style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #16a34a; margin-right: 6px;"></span>
+                        Scenario 1: Genuine Executive Voice
+                    </button>
+                    <button class="btn btn-secondary" style="padding: 12px 20px; font-size: 13.5px;"
+                        onclick="app.loadDemoScenario('deepfake')">
+                        <span
+                            style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #dc2626; margin-right: 6px;"></span>
+                        Scenario 2: AI Voice Clone Attack
+                    </button>
+                    <button class="btn btn-secondary" style="padding: 12px 20px; font-size: 13.5px;"
+                        onclick="app.loadDemoScenario('suspiciousContext')">
+                        <span
+                            style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #d97706; margin-right: 6px;"></span>
+                        Scenario 3: Contextual Risk Anomaly
+                    </button>
+                </div>
+            </section>
+
+            <!-- ==================================================================
+             SECTION 8: SIMPLE DEEPER ANALYSIS CTA
+             ================================================================== -->
+            <section class="content-section-wrap deeper-cta-section">
+                <h2 class="deeper-cta-heading">Want a Deeper Analysis?</h2>
+                <p class="deeper-cta-desc">Take your voice analysis further with the CallShadow app. Get detailed
+                    insights, advanced verification, and a more comprehensive Trust Score.</p>
+                <button class="btn btn-primary deeper-cta-btn" onclick="app.handleStartForFree()">Try Our App →</button>
+            </section>
+
+            <!-- ==================================================================
+             SECTION 9: CALL TO ACTION BANNER
+             ================================================================== -->
+
+            <section class="content-section-wrap" style="padding-top: 10px; padding-bottom: 60px;">
+                <div class="cta-banner-card">
+                    <h2 class="cta-banner-title">Ready To Transform Your Voice AI Infrastructure?</h2>
+                    <p class="cta-banner-subtitle">Join developers, creators, and enterprise defense teams using
+                        CallShadow for realistic speech generation and zero-trust voice security.</p>
+                    <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" style="padding: 12px 28px; font-size: 14px;"
+                            onclick="app.navigateTo('dashboard')">Start For Free →</button>
+                        <button class="btn btn-secondary" style="padding: 12px 24px; font-size: 14px;"
+                            onclick="app.navigateTo('apikeys')">Explore API Docs</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================================================================
+             SECTION 10: SITE FOOTER (100% LIGHT MODE)
+             ================================================================== -->
+            <footer class="site-footer">
+                <div class="footer-inner">
+                    <div>
+                        <div class="footer-brand-title">CallShadow</div>
+                        <p class="footer-brand-text">The AI voice model platform powering next-generation voice agents,
+                            text to speech, voice cloning, and explainable voice trust defense.</p>
+                    </div>
+
+                    <div>
+                        <div class="footer-col-title">Security &amp; Biometrics</div>
+                        <ul class="footer-links-list">
+                            <li><a href="#working" onclick="app.scrollToSection('working')">Neural Architecture</a></li>
+                            <li><a href="#demo-sec">Trust Engine Simulation</a></li>
+                            <li><a href="#dashboard" onclick="app.navigateTo('enroll')">Voiceprint Enrollment</a></li>
+                            <li><a href="#dashboard" onclick="app.navigateTo('privacy')">Privacy Measures</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="footer-col-title">Resources</div>
+                        <ul class="footer-links-list">
+                            <li><a href="#features" onclick="app.scrollToSection('features')">Core Capabilities</a></li>
+                            <li><a href="#working" onclick="app.scrollToSection('working')">How It Works</a></li>
+                            <li><a href="#pricing">Pricing Plans</a></li>
+                            <li><a href="#dashboard" onclick="app.navigateTo('apikeys')">API Documentation</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="footer-col-title">Console</div>
+                        <ul class="footer-links-list">
+                            <li><a href="#dashboard" onclick="app.navigateTo('dashboard')">SOC Dashboard</a></li>
+                            <li><a href="#live" onclick="app.navigateTo('live')">Live Microphone</a></li>
+                            <li><a href="#upload" onclick="app.navigateTo('upload')">Audio Ingestion</a></li>
+                            <li><a href="#enroll" onclick="app.navigateTo('enroll')">Voice Enrollment</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-bottom-bar">
+                    <div>© 2026 CallShadow Inc. All rights reserved. Light Mode Enterprise Architecture.</div>
+                    <div style="display: flex; gap: 16px;">
+                        <span style="color: #16a34a; font-weight: 600;">● Neural Systems Operational</span>
+                        <a href="#working" onclick="app.scrollToSection('working')"
+                            style="color: var(--text-muted); text-decoration: none;">Security
+                            Specs</a>
+                        <a href="#dashboard" onclick="app.navigateTo('privacy')"
+                            style="color: var(--text-muted); text-decoration: none;">Privacy Policy</a>
+                    </div>
+                </div>
+            </footer>
+
+    </div>
+
+    <!-- ======================================================================
+         2. AUTH VIEW (#auth-view - LIGHT MODE ONLY)
+         ====================================================================== -->
+    <div id="auth-view" class="auth-view-wrapper hidden">
+        <div class="auth-card">
+            <!-- Brand Header -->
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px; justify-content: center; cursor: pointer;"
+                onclick="app.navigateTo('landing')">
+                <div class="brand-spark-icon" style="color: var(--orange-primary);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M4 10v4" />
+                        <path d="M8 6v12" />
+                        <path d="M12 2v20" />
+                        <path d="M16 8v8" />
+                        <path d="M20 11v2" />
+                    </svg>
+                </div>
+                <h2
+                    style="font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--text-primary);">
+                    Call<span class="highlight-orange">Shadow</span></h2>
+            </div>
+
+            <!-- Global Error & Success Alerts -->
+            <div id="auth-error-box" class="auth-alert-box error hidden"></div>
+            <div id="auth-success-box" class="auth-alert-box success hidden"></div>
+
+            <!-- ==========================================
+                 SCREEN 1: LOGIN (SIGN IN)
+                 ========================================== -->
+            <div id="auth-screen-login" class="auth-subscreen">
+                <div class="auth-screen-header">
+                    <h3 class="auth-title">Welcome Back</h3>
+                    <p class="auth-subtitle">Sign in to your CallShadow account</p>
+                </div>
+
+                <form id="form-login" onsubmit="event.preventDefault(); app.handleLoginSubmit();"
+                    style="display: flex; flex-direction: column; gap: 14px;">
+                    <div>
+                        <label class="auth-label">Email Address</label>
+                        <input type="email" id="login-email" class="form-input" style="width: 100%;"
+                            placeholder="name@company.com" required autocomplete="email">
+                    </div>
+                    <div>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                            <label class="auth-label" style="margin-bottom: 0;">Password</label>
+                            <a href="#forgot" class="auth-switch-link" style="font-size: 11.5px;"
+                                onclick="app.switchAuthTab('forgot'); return false;">Forgot Password?</a>
+                        </div>
+                        <div style="position: relative;">
+                            <input type="password" id="login-password" class="form-input"
+                                style="width: 100%; padding-right: 36px;" placeholder="••••••••••••" required
+                                autocomplete="current-password">
+                            <button type="button" class="password-toggle-btn"
+                                onclick="app.togglePasswordVisibility('login-password', this)">
+                                👁
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="login-submit-btn" class="btn btn-primary"
+                        style="width: 100%; padding: 11px; margin-top: 4px; font-size: 13.5px;">
+                        Log In →
+                    </button>
+                </form>
+
+                <div class="auth-footer-switch">
+                    Don't have an account? <a href="#signup" class="auth-switch-link"
+                        onclick="app.switchAuthTab('signup'); return false;"><strong>Create Account</strong></a>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 SCREEN 2: SIGN UP (CREATE ACCOUNT)
+                 ========================================== -->
+            <div id="auth-screen-signup" class="auth-subscreen hidden">
+                <div class="auth-screen-header">
+                    <h3 class="auth-title">Create Account</h3>
+                    <p class="auth-subtitle">Start using CallShadow for real-time voice defense</p>
+                </div>
+
+                <form id="form-signup" onsubmit="event.preventDefault(); app.handleRegisterSubmit();"
+                    style="display: flex; flex-direction: column; gap: 14px;">
+                    <div>
+                        <label class="auth-label">Full Name</label>
+                        <input type="text" id="signup-fullname" class="form-input" style="width: 100%;"
+                            placeholder="e.g. Sophia Vance" required autocomplete="name">
+                    </div>
+                    <div>
+                        <label class="auth-label">Email Address</label>
+                        <input type="email" id="signup-email" class="form-input" style="width: 100%;"
+                            placeholder="name@company.com" required autocomplete="email">
+                    </div>
+                    <div>
+                        <label class="auth-label">Password (Min. 8 characters)</label>
+                        <div style="position: relative;">
+                            <input type="password" id="signup-password" class="form-input"
+                                style="width: 100%; padding-right: 36px;" placeholder="••••••••••••" required
+                                autocomplete="new-password">
+                            <button type="button" class="password-toggle-btn"
+                                onclick="app.togglePasswordVisibility('signup-password', this)">
+                                👁
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="auth-label">Confirm Password</label>
+                        <input type="password" id="signup-confirmpassword" class="form-input" style="width: 100%;"
+                            placeholder="••••••••••••" required autocomplete="new-password">
+                    </div>
+
+                    <button type="submit" id="signup-submit-btn" class="btn btn-primary"
+                        style="width: 100%; padding: 11px; margin-top: 4px; font-size: 13.5px;">
+                        Create Account →
+                    </button>
+                </form>
+
+                <div class="auth-footer-switch">
+                    Already have an account? <a href="#login" class="auth-switch-link"
+                        onclick="app.switchAuthTab('login'); return false;"><strong>Log In</strong></a>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 SCREEN 3: FORGOT PASSWORD
+                 ========================================== -->
+            <div id="auth-screen-forgot" class="auth-subscreen hidden">
+                <div class="auth-screen-header">
+                    <h3 class="auth-title">Reset Your Password</h3>
+                    <p class="auth-subtitle">Enter your registered email address to receive password reset instructions.
+                    </p>
+                </div>
+
+                <form id="form-forgot" onsubmit="event.preventDefault(); app.handleForgotSubmit();"
+                    style="display: flex; flex-direction: column; gap: 14px;">
+                    <div>
+                        <label class="auth-label">Email Address</label>
+                        <input type="email" id="forgot-email" class="form-input" style="width: 100%;"
+                            placeholder="name@company.com" required autocomplete="email">
+                    </div>
+
+                    <button type="submit" id="forgot-submit-btn" class="btn btn-primary"
+                        style="width: 100%; padding: 11px; margin-top: 4px; font-size: 13.5px;">
+                        Send Reset Instructions →
+                    </button>
+                </form>
+
+                <div class="auth-footer-switch">
+                    Remembered your password? <a href="#login" class="auth-switch-link"
+                        onclick="app.switchAuthTab('login'); return false;"><strong>Back to Log In</strong></a>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 SCREEN 4: RESET PASSWORD
+                 ========================================== -->
+            <div id="auth-screen-reset" class="auth-subscreen hidden">
+                <div class="auth-screen-header">
+                    <h3 class="auth-title">Set New Password</h3>
+                    <p class="auth-subtitle">Enter your reset token and new secure password.</p>
+                </div>
+
+                <form id="form-reset" onsubmit="event.preventDefault(); app.handleResetSubmit();"
+                    style="display: flex; flex-direction: column; gap: 14px;">
+                    <div>
+                        <label class="auth-label">Password Reset Token</label>
+                        <input type="text" id="reset-token" class="form-input"
+                            style="width: 100%; font-family: var(--font-mono); font-size: 12px;"
+                            placeholder="Paste reset token here" required>
+                    </div>
+                    <div>
+                        <label class="auth-label">New Password (Min. 8 characters)</label>
+                        <input type="password" id="reset-newpassword" class="form-input" style="width: 100%;"
+                            placeholder="••••••••••••" required>
+                    </div>
+                    <div>
+                        <label class="auth-label">Confirm New Password</label>
+                        <input type="password" id="reset-confirmpassword" class="form-input" style="width: 100%;"
+                            placeholder="••••••••••••" required>
+                    </div>
+
+                    <button type="submit" id="reset-submit-btn" class="btn btn-primary"
+                        style="width: 100%; padding: 11px; margin-top: 4px; font-size: 13.5px;">
+                        Update Password →
+                    </button>
+                </form>
+
+                <div class="auth-footer-switch">
+                    <a href="#login" class="auth-switch-link"
+                        onclick="app.switchAuthTab('login'); return false;"><strong>Back to Log In</strong></a>
+                </div>
+            </div>
+
+            <div
+                style="text-align: center; margin-top: 20px; border-top: 1px solid var(--border-light); padding-top: 14px;">
+                <button class="btn btn-secondary btn-sm" onclick="app.navigateTo('landing')">← Return to
+                    Homepage</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         3. ENTERPRISE SOC DASHBOARD (100% LIGHT MODE ONLY)
+         ====================================================================== -->
+    <div id="dashboard-layout" class="soc-dashboard-layout hidden">
+
+        <!-- VERTICAL SIDEBAR CONTROL PANEL (LIGHT MODE) -->
+        <aside class="sidebar-panel">
+            <div class="sidebar-header" onclick="app.navigateTo('landing')">
+                <div class="brand-spark-icon" style="color: var(--orange-primary);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M4 10v4" />
+                        <path d="M8 6v12" />
+                        <path d="M12 2v20" />
+                        <path d="M16 8v8" />
+                        <path d="M20 11v2" />
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h2 style="font-family: var(--font-heading); font-size: 16px; font-weight: 800;">Call<span
+                            class="highlight-orange">Shadow</span></h2>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav-list">
+                <div class="sidebar-section-title">Core Operations</div>
+                <button class="sidebar-item active" data-route="dashboard" onclick="app.navigateTo('dashboard')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                    </svg>
+                    <span>Overview Dashboard</span>
+                </button>
+                <button class="sidebar-item" data-route="live" onclick="app.navigateTo('live')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    </svg>
+                    <span>Live Recognition</span>
+                </button>
+                <button class="sidebar-item" data-route="upload" onclick="app.navigateTo('upload')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <span>Upload Audio</span>
+                </button>
+                <button class="sidebar-item" data-route="enroll" onclick="app.navigateTo('enroll')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <line x1="19" y1="8" x2="19" y2="14" />
+                        <line x1="22" y1="11" x2="16" y2="11" />
+                    </svg>
+                    <span>Authenticate Voice</span>
+                </button>
+                <button class="sidebar-item" data-route="analysis" onclick="app.navigateTo('analysis')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 6v6l4 2" />
+                    </svg>
+                    <span>Trust Engine Result</span>
+                </button>
+
+                <div class="sidebar-section-title">Intelligence & Tools</div>
+                <button class="sidebar-item" data-route="history" onclick="app.navigateTo('history')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 14 14" />
+                    </svg>
+                    <span>Analysis History</span>
+                </button>
+                <button class="sidebar-item" data-route="apikeys" onclick="app.navigateTo('apikeys')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 2l-2 2m-2-2l2 2" />
+                        <path d="M15 11l-3 3m0 0l-3-3m3 3V3" />
+                    </svg>
+                    <span>Get API Keys</span>
+                </button>
+                <button class="sidebar-item" data-route="privacy" onclick="app.navigateTo('privacy')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    <span>Privacy Measures</span>
+                </button>
+                <button class="sidebar-item" data-route="about" onclick="app.navigateTo('about')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    <span>About Our App</span>
+                </button>
+                <button class="sidebar-item" data-route="settings" onclick="app.navigateTo('settings')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    <span>Settings</span>
+                </button>
+
+                <!-- LATEST ACTIVITY (MOVED TO SIDEBAR) -->
+                <div class="sidebar-section-title"
+                    style="margin-top: 10px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+                    Latest Activity
+                </div>
+                <div class="sidebar-activity-wrapper">
+                    <!-- Activity 1: Identity Protection -->
+                    <div class="sidebar-activity-item">
+                        <div class="sidebar-act-head">
+                            <div class="sidebar-act-title">Identity Protection</div>
+                            <div class="sidebar-act-sub">Monitoring login behavior</div>
+                        </div>
+                        <div class="sidebar-meta-grid">
+                            <div class="sidebar-meta-col">
+                                <span class="meta-key">Risk</span>
+                                <span class="meta-val" style="color: var(--orange-dark);">Med–High</span>
+                            </div>
+                            <div class="sidebar-meta-col">
+                                <span class="meta-key">Failed</span>
+                                <span class="meta-val">412</span>
+                            </div>
+                            <div class="sidebar-meta-col">
+                                <span class="meta-key">Users</span>
+                                <span class="meta-val">37</span>
+                            </div>
+                            <div class="sidebar-meta-col">
+                                <span class="meta-key">Source</span>
+                                <span class="meta-val">Ext. IPs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activity 2: Alert Status -->
+                    <div class="sidebar-activity-item">
+                        <div class="sidebar-act-head">
+                            <div class="sidebar-act-title">Alert Status</div>
+                            <div class="sidebar-act-sub">Current levels &amp; trends</div>
+                        </div>
+                        <div class="sidebar-meta-grid">
+                            <div class="sidebar-meta-col">
+                                <span class="meta-key">Status</span>
+                                <span class="meta-val">Sched.</span>
+                            </div>
+                            <div class="sidebar-meta-col">
+                                <span class="meta-key">Active</span>
+                                <span class="meta-val">8</span>
+                            </div>
+                            <div class="sidebar-meta-col">
+                                <span class="meta-key">Critical</span>
+                                <span class="meta-val" style="color: var(--status-danger);">2</span>
+                            </div>
+                            <div class="sidebar-meta-col">
+                                <span class="meta-key">Trend</span>
+                                <span class="meta-val" style="color: var(--status-safe);">+12%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; flex: 1;">
+                    <div id="sidebar-avatar" class="avatar-circle"
+                        style="width: 28px; height: 28px; font-size: 11px; flex-shrink: 0;">U</div>
+                    <div style="overflow: hidden;">
+                        <div id="sidebar-username"
+                            style="font-size: 12px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            User</div>
+                        <div id="sidebar-userrole"
+                            style="font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            SOC Operator</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11px; flex-shrink: 0;"
+                    onclick="app.handleLogout()" title="Log out from console">
+                    Log Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN SOC CONTENT VIEWPORT (LIGHT MODE) -->
+        <div class="soc-main-content">
+
+            <!-- SOC TOP STATUS BAR -->
+            <header class="soc-top-bar">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 14px; font-weight: 700; color: var(--text-primary);"
+                        id="soc-top-title">Security Overview</span>
+                    <span
+                        style="padding: 3px 8px; border-radius: var(--radius-full); font-size: 10.5px; font-weight: 700; background: var(--status-safe-bg); color: var(--status-safe); border: 1px solid var(--status-safe-border);">
+                        ● Neural Pipeline Online
+                    </span>
+                </div>
+
+                <!-- Simulation Quick Action Buttons -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Simulate:</span>
+                    <button class="btn btn-secondary btn-sm"
+                        style="color: var(--status-safe); border-color: var(--status-safe-border);"
+                        onclick="app.loadDemoScenario('genuine')">
+                        ● Genuine
+                    </button>
+                    <button class="btn btn-secondary btn-sm"
+                        style="color: var(--status-danger); border-color: var(--status-danger-border);"
+                        onclick="app.loadDemoScenario('deepfake')">
+                        ● AI Clone
+                    </button>
+                    <button class="btn btn-secondary btn-sm"
+                        style="color: var(--status-warning); border-color: var(--status-warning-border);"
+                        onclick="app.loadDemoScenario('suspiciousContext')">
+                        ● Context Anomaly
+                    </button>
+                </div>
+            </header>
+
+            <!-- SOC VIEWS CONTAINER -->
+            <div class="soc-view-container">
+
+                <!-- VIEW 1: DASHBOARD OVERVIEW -->
+                <div id="view-dashboard" class="view-panel">
+                    <!-- Dynamic User Welcome Header -->
+                    <div id="dashboard-welcome-banner"
+                        style="margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <h2
+                                style="font-size: 20px; font-weight: 800; color: var(--text-primary); line-height: 1.2;">
+                                Welcome back, <span id="dashboard-welcome-name" class="highlight-orange">User</span>
+                            </h2>
+                            <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">Real-time acoustic
+                                telemetry, neural classifier status, and threat landscape overview.</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="badge badge-secondary" style="font-size: 11px; padding: 4px 10px;">
+                                User ID: <strong id="dashboard-user-id" style="color: var(--text-primary);">#--</strong>
+                            </span>
+                            <span id="dashboard-account-date" class="badge badge-secondary"
+                                style="font-size: 11px; padding: 4px 10px;">
+                                Member Since: <strong id="dashboard-member-since">Today</strong>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Top 5 Metrics -->
+                    <div class="metrics-row">
+                        <div class="metric-card">
+                            <div class="metric-label">Total Analyses</div>
+                            <div class="metric-value">148</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">AI Voices Detected</div>
+                            <div class="metric-value" style="color: var(--orange-dark);">38</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Human Voices Verified</div>
+                            <div class="metric-value">110</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">High-Risk Analyses</div>
+                            <div class="metric-value">22</div>
+                        </div>
+                        <div class="metric-card highlight">
+                            <div class="metric-label" style="color: var(--orange-deep); font-weight: 700;">Trust
+                                Score</div>
+                            <div class="metric-value" style="color: var(--orange-terracotta);">82 <span
+                                    style="font-size: 14px; color: var(--text-muted); font-weight: 500;">/ 100</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Voice Analysis Activity Jagged Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ea580c"
+                                    stroke-width="2.5">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                                </svg>
+                                Voice Analysis Activity
+                            </div>
+                            <div class="chart-legend">
+                                <div class="legend-item"><span class="legend-dot total"></span><span>Total
+                                        Analyses</span>
+                                </div>
+                                <div class="legend-item"><span class="legend-dot ai-generated"></span><span>AI
+                                        Generated</span>
+                                </div>
+                                <div class="legend-item"><span class="legend-dot human-genuine"></span><span>Human
+                                        Genuine</span></div>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-container">
+                            <canvas id="security-activity-canvas" class="activity-canvas" width="1200"
+                                height="240"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Lower 2-Column Balanced Grid -->
+                    <div class="lower-grid">
+                        <!-- Col 1: Threat Distribution & Volume -->
+                        <div style="display: flex; flex-direction: column; gap: 14px;">
+                            <div class="subcard">
+                                <div class="subcard-header">
+                                    <div class="subcard-title">Threat Distribution</div>
+                                </div>
+                                <div class="distribution-bars">
+                                    <div class="dist-bar-item">
+                                        <div class="dist-bar-labels"><span>Network</span></div>
+                                        <div class="dist-bar-track">
+                                            <div class="dist-bar-fill network" style="width: 82%;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="dist-bar-item">
+                                        <div class="dist-bar-labels"><span>Identity</span></div>
+                                        <div class="dist-bar-track">
+                                            <div class="dist-bar-fill identity" style="width: 64%;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="dist-bar-item">
+                                        <div class="dist-bar-labels"><span>Endpoint</span></div>
+                                        <div class="dist-bar-track">
+                                            <div class="dist-bar-fill endpoint" style="width: 42%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dist-scale-ticks">
+                                    <span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span><span>100%</span>
+                                </div>
+                            </div>
+
+                            <div class="subcard">
+                                <div class="subcard-header">
+                                    <div class="subcard-title">Threat Volume</div>
+                                </div>
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+                                    <div style="font-size: 12px; color: var(--text-secondary);">Current Level: <strong
+                                            style="color: var(--orange-dark);">High</strong></div>
+                                    <div style="font-size: 22px; font-weight: 800; color: var(--text-primary);">74%
+                                    </div>
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">Normal
+                                    Range: 30% – 55%</div>
+                                <div class="segmented-bar-wrapper" id="threat-volume-segments"></div>
+                            </div>
+                        </div>
+
+                        <!-- Col 2: Expanded AI Insights Command Panel -->
+                        <div class="ai-insights-panel">
+                            <div class="ai-insights-top-row">
+                                <div class="ai-insights-badge-group">
+                                    <div
+                                        style="width: 26px; height: 26px; border-radius: 50%; background: #fdba74; display: flex; align-items: center; justify-content: center; color: var(--orange-deep); font-weight: 800; font-size: 13px;">
+                                        ✦</div>
+                                    <div>
+                                        <div
+                                            style="font-size: 14px; font-weight: 800; color: var(--orange-deep); line-height: 1.2;">
+                                            AI Insights &amp; Neural Diagnostics</div>
+                                        <div style="font-size: 11px; color: #9a3412;">Real-time multi-factor acoustic
+                                            telemetry</div>
+                                    </div>
+                                </div>
+                                <span
+                                    style="font-size: 11px; font-weight: 700; color: var(--status-safe); background: #ffffff; padding: 4px 10px; border-radius: var(--radius-full); border: 1px solid #fed7aa; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                    ● Model Inference v3.2 Active
+                                </span>
+                            </div>
+
+                            <div class="ai-insights-body-grid">
+                                <!-- Left Sub-panel: Big Score & Telemetry -->
+                                <div>
+                                    <div class="ai-big-number">92%</div>
+                                    <div class="ai-score-description">
+                                        Confidence score that current voice security threats have been accurately
+                                        classified and neutralized by neural transformers.
+                                    </div>
+                                    <div class="ai-telemetry-tags">
+                                        <span class="ai-telemetry-pill">P95 Latency: 38ms</span>
+                                        <span class="ai-telemetry-pill">Drift: Nominal</span>
+                                        <span class="ai-telemetry-pill">FPR: &lt; 0.08%</span>
+                                    </div>
+                                </div>
+
+                                <!-- Right Sub-panel: Key Neural Findings -->
+                                <div class="ai-findings-list">
+                                    <div class="ai-finding-item">
+                                        <span class="ai-finding-bullet"></span>
+                                        <div>
+                                            <strong style="color: var(--text-primary); font-size: 12px;">Acoustic Phase
+                                                Coherence:</strong>
+                                            <span> 2 synthetic vocoder phase anomalies flagged and quarantined in the
+                                                last 24h.</span>
+                                        </div>
+                                    </div>
+                                    <div class="ai-finding-item">
+                                        <span class="ai-finding-bullet"></span>
+                                        <div>
+                                            <strong style="color: var(--text-primary); font-size: 12px;">Speaker
+                                                Biometric Stability:</strong>
+                                            <span> 98.4% identity continuity maintained across 3,420 active concurrent
+                                                streams.</span>
+                                        </div>
+                                    </div>
+                                    <div class="ai-finding-item">
+                                        <span class="ai-finding-bullet"></span>
+                                        <div>
+                                            <strong style="color: var(--text-primary); font-size: 12px;">Autonomous
+                                                Policy Advice:</strong>
+                                            <span> Trigger step-up voice challenge verification on high-value
+                                                transaction requests (&gt;$10k).</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ai-panel-bottom">
+                                <div class="ai-pagination-dashes">
+                                    <span class="ai-dash active"></span>
+                                    <span class="ai-dash"></span>
+                                    <span class="ai-dash"></span>
+                                    <span class="ai-dash"></span>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="btn btn-secondary btn-sm"
+                                        style="font-size: 11px; padding: 4px 10px; background: #ffffff; border-color: #fed7aa; color: var(--orange-dark);"
+                                        onclick="app.showToast('Running comprehensive neural diagnostics scan...')">
+                                        Scan Telemetry →
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: LIVE RECOGNITION (OPEN EDITORIAL LAYOUT + DIAGRAM) -->
+                <div id="view-live" class="view-panel hidden">
+                    <div class="about-editorial-page">
+                        <span class="about-editorial-eyebrow">Real-Time AI Voice Recognition &amp; Telemetry</span>
+                        <h1 class="about-editorial-headline">Live Recognition</h1>
+                        <p class="about-editorial-intro">
+                            Stream live audio directly from your microphone. Results update every 3 seconds
+                            while you speak — no need to wait until recording ends. The Trust Engine scores
+                            each audio window in real-time via encrypted WebSocket streaming.
+                        </p>
+
+                        <!-- Auth Gate: visible only when NOT logged in -->
+                        <div id="live-auth-gate" class="live-auth-gate hidden">
+                            <div class="live-auth-gate-icon">🔒</div>
+                            <h3 class="live-auth-gate-title">Sign In Required</h3>
+                            <p class="live-auth-gate-desc">Live Recognition requires an account to stream and analyze
+                                audio in real time.</p>
+                            <button class="btn btn-primary" onclick="app.navigateTo('login')"
+                                style="margin-top: 8px;">Sign In to Continue</button>
+                        </div>
+
+                        <!-- Live Recognition Panel: visible when logged in -->
+                        <div id="live-recognition-panel">
+
+                            <!-- Top controls row: mic button + verdict badge + action buttons -->
+                            <div class="live-controls-row">
+                                <div class="live-mic-controls">
+                                    <button id="live-mic-btn" class="mic-circle-button"
+                                        onclick="app.toggleLiveRecording()">
+                                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                        </svg>
+                                    </button>
+                                    <div id="live-record-timer" class="recording-timer">00:00</div>
+                                </div>
+                                <div id="live-verdict-badge" class="live-verdict-badge collecting">
+                                    <span class="live-verdict-dot"></span>
+                                    <span id="live-verdict-text">Waiting to start…</span>
+                                </div>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <button id="live-start-btn" class="btn btn-primary"
+                                        onclick="app.startLiveRecording()">
+                                        ▶&nbsp;Start Live Recognition
+                                    </button>
+                                    <button id="live-stop-btn" class="btn btn-secondary" style="display: none;"
+                                        onclick="app.stopLiveRecording()">
+                                        ⬛&nbsp;Stop &amp; Finalize
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Optional params -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0 4px;">
+                                <div>
+                                    <label
+                                        style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Claimed
+                                        Speaker ID (Optional)</label>
+                                    <input type="text" id="live-speaker-id" class="form-input" style="width: 100%;"
+                                        placeholder="e.g. VX-4819">
+                                </div>
+                                <div>
+                                    <label
+                                        style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Context
+                                        Value ($) (Optional)</label>
+                                    <input type="number" id="live-tx-value" class="form-input" style="width: 100%;"
+                                        placeholder="e.g. 5000">
+                                </div>
+                            </div>
+
+                            <!-- Dual canvas: waveform + trust score graph side-by-side -->
+                            <div class="live-dual-canvas-grid">
+                                <div class="live-canvas-card">
+                                    <div class="live-canvas-label">
+                                        <span class="live-canvas-dot" style="background:#ea580c;"></span> Live Waveform
+                                    </div>
+                                    <canvas id="live-waveform-canvas" class="live-waveform-canvas" width="600"
+                                        height="100"></canvas>
+                                </div>
+                                <div class="live-canvas-card">
+                                    <div class="live-canvas-label">
+                                        <span class="live-canvas-dot" style="background:#fb923c;"></span> Trust Score
+                                        Over Time
+                                    </div>
+                                    <canvas id="live-trust-graph-canvas" class="live-trust-graph-canvas" width="600"
+                                        height="100"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Per-chunk result history -->
+                            <div class="live-chunk-section">
+                                <div class="live-chunk-header">
+                                    <span class="live-chunk-header-title">Per-Chunk Analysis</span>
+                                    <span id="live-chunk-count" class="live-chunk-count-badge">0 chunks</span>
+                                </div>
+                                <div id="live-chunk-list" class="live-chunk-list">
+                                    <div id="live-chunk-empty" class="live-chunk-empty">
+                                        Results will appear here after the first 3 seconds of audio.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Diagram: Live Acoustic Telemetry Dataflow -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">Live Acoustic Telemetry &amp; Scoring Architecture</h2>
+                            <p class="editorial-body-text">
+                                High-speed in-memory data pipeline executing continuous spectral and biometric
+                                verification:
+                            </p>
+
+                            <div class="diagram-canvas-wrap">
+                                <div class="diagram-flow-track">
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 01</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Web Audio PCM</div>
+                                        <span class="diagram-node-sub">48kHz Float32 Stream</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 02</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M2 20h20" />
+                                                <path d="M5 20V10" />
+                                                <path d="M9 20V4" />
+                                                <path d="M13 20v-8" />
+                                                <path d="M17 20V7" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">STFT Filter Bins</div>
+                                        <span class="diagram-node-sub">128-Mel Spectrogram</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 03</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <rect x="4" y="4" width="16" height="16" rx="2" />
+                                                <circle cx="9" cy="9" r="2" />
+                                                <path d="M15 9h2M9 15h6" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">ECAPA Latent Extractor</div>
+                                        <span class="diagram-node-sub">512-dim Vector Match</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 04</span>
+                                        <div style="color: var(--status-safe);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                <polyline points="9 12 11 14 15 10" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Live Trust Verdict</div>
+                                        <span class="diagram-node-sub">&lt; 38ms Memory Zeroized</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="specs-editorial-table">
+                                <div class="specs-editorial-row">
+                                    <span class="specs-editorial-key">Input Sample Rate</span>
+                                    <span class="specs-editorial-val">48,000 Hz (Float32 PCM Audio Buffer)</span>
+                                </div>
+                                <div class="specs-editorial-row">
+                                    <span class="specs-editorial-key">FFT Window &amp; Hop Size</span>
+                                    <span class="specs-editorial-val">2048 Window • 512 Hop Size (128-Mel Filter)</span>
+                                </div>
+                                <div class="specs-editorial-row">
+                                    <span class="specs-editorial-key">Phase Coherence Score</span>
+                                    <span class="specs-editorial-val"><span style="color: var(--status-safe);">●</span>
+                                        98.4% Natural Vocal Perturbation</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 3: UPLOAD AUDIO (OPEN EDITORIAL LAYOUT + DIAGRAM) -->
+                <div id="view-upload" class="view-panel hidden">
+                    <div class="about-editorial-page">
+                        <span class="about-editorial-eyebrow">Forensic Deepfake &amp; Replay Inspection</span>
+                        <h1 class="about-editorial-headline">Multi-Format Audio Forensic Scanner</h1>
+                        <p class="about-editorial-intro">
+                            Upload pre-recorded audio files (.wav, .mp3, .m4a, .flac) to detect generative neural
+                            vocoder artifacts, diffusion-based voice clones, and acoustic splice anomalies.
+                        </p>
+
+                        <!-- Unboxed Drag & Drop Upload Zone -->
+                        <div
+                            style="display: flex; flex-direction: column; gap: 18px; margin: 28px 0; max-width: 720px;">
+                            <div id="upload-dropzone" class="dropzone-box" style="max-width: 100%;"
+                                onclick="document.getElementById('audio-file-input').click()">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ea580c"
+                                    stroke-width="1.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                <div id="dropzone-label"
+                                    style="font-size: 13.5px; font-weight: 700; color: var(--text-primary);">Drag &amp;
+                                    Drop voice file here, or <span style="color: var(--orange-primary);">browse</span>
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-muted);">Supports WAV, MP3, M4A, FLAC
+                                    (Max 50MB)</div>
+                                <input type="file" id="audio-file-input" accept=".wav,.mp3,.m4a,.flac"
+                                    style="display: none;" onchange="app.handleFileSelect(event)">
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                                <div>
+                                    <label
+                                        style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Claimed
+                                        Speaker ID (Optional)</label>
+                                    <input type="text" id="upload-speaker-id" class="form-input" style="width: 100%;"
+                                        placeholder="e.g. VX-4819">
+                                </div>
+                                <div>
+                                    <label
+                                        style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Context
+                                        Value ($)</label>
+                                    <input type="number" id="upload-tx-value" class="form-input" style="width: 100%;"
+                                        placeholder="e.g. 5000">
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" style="padding: 11px 24px; align-self: flex-start;"
+                                onclick="app.submitUploadAnalysis()">Run Forensic Security Analysis →</button>
+                        </div>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Diagram: Audio Forensic Processing Pipeline -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">Forensic Deepfake Detection Pipeline</h2>
+                            <p class="editorial-body-text">
+                                The four-stage forensic pipeline inspecting high-frequency spectral artifacts and
+                                synthetic phase anomalies:
+                            </p>
+
+                            <div class="diagram-canvas-wrap">
+                                <div class="diagram-flow-track">
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 01</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                <polyline points="17 8 12 3 7 8" />
+                                                <line x1="12" y1="3" x2="12" y2="15" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Waveform Decompress</div>
+                                        <span class="diagram-node-sub">Multi-Format Audio Parse</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 02</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M2 20h20" />
+                                                <path d="M5 20V10" />
+                                                <path d="M9 20V4" />
+                                                <path d="M13 20v-8" />
+                                                <path d="M17 20V7" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Mel-Spectrogram STFT</div>
+                                        <span class="diagram-node-sub">Harmonic &amp; Jitter Track</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 03</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <rect x="4" y="4" width="16" height="16" rx="2" />
+                                                <polyline points="8 12 12 16 16 8" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Wav2Vec2 Artifact Filter</div>
+                                        <span class="diagram-node-sub">Synthetic Phase Isolation</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 04</span>
+                                        <div style="color: var(--status-safe);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                <polyline points="9 12 11 14 15 10" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Cryptographic Verdict</div>
+                                        <span class="diagram-node-sub">Additive Waterfall Audit</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 4: AUTHENTICATE VOICE (OPEN EDITORIAL LAYOUT + DIAGRAM) -->
+                <div id="view-enroll" class="view-panel hidden">
+                    <div class="about-editorial-page">
+                        <span class="about-editorial-eyebrow">Biometric Identity Registration</span>
+                        <h1 class="about-editorial-headline">Executive Voiceprint Profile Enrollment</h1>
+                        <p class="about-editorial-intro">
+                            Register an executive or authorized user voiceprint. Generates a non-invertible
+                            512-dimensional ECAPA latent mathematical vector. Raw spoken audio is never retained or
+                            exposed.
+                        </p>
+
+                        <!-- Unboxed Enrollment Form -->
+                        <div
+                            style="display: flex; flex-direction: column; gap: 16px; margin: 28px 0; max-width: 600px;">
+                            <div>
+                                <label
+                                    style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Speaker
+                                    Full Name</label>
+                                <input type="text" id="enroll-speaker-name" class="form-input" style="width: 100%;"
+                                    placeholder="e.g. Sophia Vance">
+                            </div>
+                            <div id="enroll-dropzone" class="dropzone-box" style="min-height: 120px; max-width: 100%;"
+                                onclick="document.getElementById('enroll-file-input').click()">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ea580c"
+                                    stroke-width="2">
+                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                </svg>
+                                <div id="enroll-dropzone-label"
+                                    style="font-size: 12.5px; font-weight: 600; color: var(--text-primary);">Upload
+                                    reference voice sample (.wav recommended)</div>
+                                <input type="file" id="enroll-file-input" accept=".wav,.mp3,.m4a,.flac"
+                                    style="display: none;" onchange="app.handleEnrollFileSelect(event)">
+                            </div>
+                            <button class="btn btn-primary" style="padding: 11px 24px; align-self: flex-start;"
+                                onclick="app.submitEnrollment()">Register Voiceprint Profile →</button>
+                        </div>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Diagram: Biometric Tokenization Pipeline -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">512-dim Biometric Enrollment &amp; Tokenization Flow
+                            </h2>
+                            <p class="editorial-body-text">
+                                How raw reference audio is transformed into non-invertible latent embeddings:
+                            </p>
+
+                            <div class="diagram-canvas-wrap">
+                                <div class="diagram-flow-track">
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 01</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Voice Activity (VAD)</div>
+                                        <span class="diagram-node-sub">Isolate Vocal Formants</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 02</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                                <circle cx="9" cy="7" r="4" />
+                                                <line x1="19" y1="8" x2="19" y2="14" />
+                                                <line x1="22" y1="11" x2="16" y2="11" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">ECAPA-TDNN Core</div>
+                                        <span class="diagram-node-sub">Acoustic Latent Space</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 03</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <rect x="3" y="11" width="18" height="11" rx="2" />
+                                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">512-dim Tokenizer</div>
+                                        <span class="diagram-node-sub">One-Way Hash Vector</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 04</span>
+                                        <div style="color: var(--status-safe);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                <polyline points="9 12 11 14 15 10" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Dedicated KMS Vault</div>
+                                        <span class="diagram-node-sub">Zero Audio Stored</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 5: EXPLAINABLE TRUST ENGINE RESULT (3-MODEL WEIGHTED FORMULA) -->
+                <div id="view-analysis" class="view-panel hidden">
+                    <div class="about-editorial-page">
+                        <span class="about-editorial-eyebrow">3-Model Trust Evaluation &amp; Verdict</span>
+                        <h1 class="about-editorial-headline">Explainable Trust Engine Result</h1>
+                        <p class="about-editorial-intro">
+                            Transparent 3-model forensic breakdown powered by an explainable formula:
+                            <strong>40% AI Deepfake Detection + 30% Identity Biometric Matching + 30% Context Safety
+                                Check</strong>.
+                            Zero black-box ambiguity.
+                        </p>
+
+                        <!-- Open Unified Trust Result & 3-Factor Section -->
+                        <div
+                            style="display: grid; grid-template-columns: 320px 1fr; gap: 36px; margin: 28px 0; align-items: flex-start;">
+                            <!-- Dial & Verdict Display -->
+                            <div
+                                style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                <div style="position: relative; width: 180px; height: 180px; margin-bottom: 16px;">
+                                    <svg style="width: 100%; height: 100%; transform: rotate(-90deg);"
+                                        viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" stroke-width="8" />
+                                        <circle id="trust-dial-meter" cx="50" cy="50" r="42" fill="none"
+                                            stroke="#ea580c" stroke-width="8" stroke-dasharray="264"
+                                            stroke-dashoffset="34" stroke-linecap="round" />
+                                    </svg>
+                                    <div
+                                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center;">
+                                        <span id="trust-dial-val"
+                                            style="font-family: var(--font-heading); font-size: 42px; font-weight: 800; color: var(--text-primary); line-height: 1;">94</span>
+                                        <span
+                                            style="font-size: 10.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">/
+                                            100 TRUST</span>
+                                    </div>
+                                </div>
+                                <div id="trust-verdict-tag"
+                                    style="padding: 6px 18px; border-radius: var(--radius-full); font-size: 12.5px; font-weight: 700; background: var(--status-safe-bg); color: var(--status-safe); border: 1px solid var(--status-safe-border); display: inline-block;">
+                                    ✓ Verified Authentic Voice
+                                </div>
+                                <p id="trust-verdict-desc"
+                                    style="font-size: 12.5px; color: var(--text-secondary); margin-top: 12px; line-height: 1.55; text-align: center;">
+                                    3-model evaluation confirmed authentic human voice, verified speaker identity, and
+                                    safe context.
+                                </p>
+                            </div>
+
+                            <!-- 3-Model Factor List -->
+                            <div>
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px;">
+                                    <div
+                                        style="font-size: 13.5px; font-weight: 800; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">
+                                        Why This Score? (3-Model Weighted Formula)
+                                    </div>
+                                    <span
+                                        style="font-size: 11px; font-weight: 700; color: var(--orange-primary); background: #fff7ed; padding: 3px 8px; border-radius: 6px; border: 1px solid #fed7aa;">
+                                        40% AI + 30% ID + 30% CTX
+                                    </span>
+                                </div>
+                                <div id="factor-waterfall-list"
+                                    style="display: flex; flex-direction: column; gap: 8px;"></div>
+                                <div id="live-session-timeline-section" class="hidden" style="margin-top: 28px;">
+                                    <div class="live-result-timeline-header">
+                                        <span class="live-result-timeline-title">Live Session Timeline</span>
+                                        <span id="live-result-chunk-count" class="live-chunk-count-badge">—
+                                            chunks</span>
+                                    </div>
+                                    <!-- Replay of the trust graph from the session -->
+                                    <canvas id="live-result-trust-graph" class="live-trust-graph-canvas" width="700"
+                                        height="120" style="width:100%; margin: 10px 0; border-radius: 8px;"></canvas>
+                                    <!-- Scrollable chunk table -->
+                                    <div class="live-chunk-section" style="margin-top: 8px;">
+                                        <div class="live-chunk-header">
+                                            <span class="live-chunk-header-title">Per-Chunk Breakdown</span>
+                                        </div>
+                                        <div id="live-result-chunk-list" class="live-chunk-list"></div>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                                    <button class="btn btn-primary" onclick="app.navigateTo('live')">Analyze Another
+                                        Stream</button>
+                                    <button class="btn btn-secondary" onclick="app.exportSecurityReport()">Export PDF
+                                        Audit Report</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Diagram: 3-Model Weighted Trust Score Flow -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">3-Model Weighted Trust Score Flow</h2>
+                            <p class="editorial-body-text">
+                                Transparent weighted scoring combining AI Deepfake Detection, Biometric Identity
+                                Matching, and Context Safety:
+                            </p>
+
+                            <div class="diagram-canvas-wrap">
+                                <div class="diagram-flow-track">
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge" style="background:#e0f2fe; color:#0284c7;">40%
+                                            WEIGHT</span>
+                                        <div style="font-weight: 700; color: var(--status-safe);">1. AI Generated
+                                            Detection
+                                        </div>
+                                        <span class="diagram-node-sub">Wav2Vec2 Deepfake Model</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector">+</div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge" style="background:#e0f2fe; color:#0284c7;">30%
+                                            WEIGHT</span>
+                                        <div style="font-weight: 700; color: var(--status-safe);">2. Identity Matching
+                                        </div>
+                                        <span class="diagram-node-sub">ECAPA-TDNN Voiceprint</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector">+</div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge" style="background:#e0f2fe; color:#0284c7;">30%
+                                            WEIGHT</span>
+                                        <div style="font-weight: 700; color: var(--status-safe);">3. Context Risk Safety
+                                        </div>
+                                        <span class="diagram-node-sub">Context &amp; Risk Engine</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector">=</div>
+                                    <div class="diagram-stage-node" style="border-color: var(--orange-primary);">
+                                        <span class="diagram-node-badge"
+                                            style="background: var(--orange-dark); color: #fff;">0–100 TRUST</span>
+                                        <div style="font-weight: 800; color: var(--orange-dark);">Final Trust Verdict
+                                        </div>
+                                        <span class="diagram-node-sub">Automated SOC Action</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 6: AUDIT HISTORY (OPEN EDITORIAL + LOGGING DIAGRAM) -->
+                <div id="view-history" class="view-panel hidden">
+                    <div class="about-editorial-page">
+                        <span class="about-editorial-eyebrow">Immutable Audit Trail</span>
+                        <h1 class="about-editorial-headline">Security Operations Incident Audit History</h1>
+                        <p class="about-editorial-intro">
+                            Tamper-proof cryptographic audit log recording all neural voice evaluations, trust verdicts,
+                            and forensic biomarker metadata without exposing raw audio.
+                        </p>
+
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin: 24px 0 14px 0;">
+                            <span style="font-weight: 800; font-size: 15px; color: var(--text-primary);">Recorded
+                                Incident Stream</span>
+                            <input type="text" class="form-input" placeholder="Filter audit records..."
+                                style="width: 260px;" oninput="app.filterHistory(this.value)">
+                        </div>
+
+                        <!-- Open Table -->
+                        <div style="overflow-x: auto; margin-bottom: 28px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                <thead>
+                                    <tr style="border-bottom: 1.5px solid #e2e8f0; text-align: left;">
+                                        <th
+                                            style="padding: 12px 8px; color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                                            INCIDENT ID</th>
+                                        <th
+                                            style="padding: 12px 8px; color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                                            TIME</th>
+                                        <th
+                                            style="padding: 12px 8px; color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                                            INPUT TYPE</th>
+                                        <th
+                                            style="padding: 12px 8px; color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                                            TRUST SCORE</th>
+                                        <th
+                                            style="padding: 12px 8px; color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                                            VERDICT</th>
+                                        <th
+                                            style="padding: 12px 8px; color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                                            ACTION</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body"></tbody>
+                            </table>
+                        </div>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Diagram: Incident Logging Pipeline -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">Immutable Incident Logging Pipeline</h2>
+                            <p class="editorial-body-text">
+                                End-to-end cryptographic provenance workflow capturing forensic parameters:
+                            </p>
+
+                            <div class="diagram-canvas-wrap">
+                                <div class="diagram-flow-track">
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 01</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Incident Ingest</div>
+                                        <span class="diagram-node-sub">VoIP / Webhook stream</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 02</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <path d="M12 6v6l4 2" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Neural Evaluation</div>
+                                        <span class="diagram-node-sub">5-Factor waterfall</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 03</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <rect x="3" y="11" width="18" height="11" rx="2" />
+                                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">SHA-256 Hash</div>
+                                        <span class="diagram-node-sub">Tamper-proof metadata</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 04</span>
+                                        <div style="color: var(--status-safe);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <polyline points="20 6 9 17 4 12" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">SIEM Dispatch</div>
+                                        <span class="diagram-node-sub">Splunk / Datadog webhook</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 7: GET API KEYS (OPEN EDITORIAL + ARCHITECTURE DIAGRAM) -->
+                <div id="view-apikeys" class="view-panel hidden">
+                    <div class="about-editorial-page">
+                        <span class="about-editorial-eyebrow">Developer Portal &amp; SDKs</span>
+                        <h1 class="about-editorial-headline">Enterprise REST &amp; WebSocket Integration Endpoints</h1>
+                        <p class="about-editorial-intro">
+                            Integrate CallShadow real-time voice verification into your mobile applications, contact
+                            center PBX trunks, and VoIP gateways with sub-40ms latency.
+                        </p>
+
+                        <!-- API Key Bar (Unboxed) -->
+                        <div
+                            style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin: 24px 0; display: flex; justify-content: space-between; align-items: center; max-width: 800px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                            <div>
+                                <div
+                                    style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">
+                                    Active Secret API Key</div>
+                                <div
+                                    style="font-family: var(--font-mono); font-size: 14px; color: var(--orange-dark); font-weight: 700; margin-top: 2px;">
+                                    cs_live_9f83a02b4e7c11894d03</div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm"
+                                onclick="app.showToast('API Key copied to clipboard')">Copy Secret Key</button>
+                        </div>
+
+                        <div style="font-size: 14px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">
+                            Quick Integration Snippet (Python SDK):</div>
+                        <pre class="code-snippet-box" style="max-width: 800px;"><code>import requests
+
+url = "http://localhost:8000/api/audio/upload"
+headers = {"Authorization": "Bearer cs_live_9f83a02b4e7c11894d03"}
+files = {"file": open("user_call.wav", "rb")}
+
+response = requests.post(url, headers=headers, files=files)
+result = response.json()
+print(f"Trust Score: {result['trust_score']} / 100 | Verdict: {result['verdict']}")</code></pre>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Diagram: API Gateway Dataflow -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">Enterprise Telephony &amp; API Integration Architecture
+                            </h2>
+                            <p class="editorial-body-text">
+                                End-to-end dataflow illustrating sub-40ms authentication over WebSocket streams:
+                            </p>
+
+                            <div class="diagram-canvas-wrap">
+                                <div class="diagram-flow-track">
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">CLIENT</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <rect x="5" y="2" width="14" height="20" rx="2" />
+                                                <line x1="12" y1="18" x2="12.01" y2="18" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">SIP Gateway / App</div>
+                                        <span class="diagram-node-sub">Twilio / Asterisk / WebRTC</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">TRANSPORT</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">TLS 1.3 WebSocket</div>
+                                        <span class="diagram-node-sub">Encrypted PCM Enclave</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">INFERENCE</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <rect x="4" y="4" width="16" height="16" rx="2" />
+                                                <circle cx="9" cy="9" r="2" />
+                                                <path d="M15 9h2M9 15h6" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">CallShadow Core</div>
+                                        <span class="diagram-node-sub">Wav2Vec2 + ECAPA (512d)</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">RESPONSE</span>
+                                        <div style="color: var(--status-safe);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <polyline points="20 6 9 17 4 12" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">&lt; 38ms Verdict</div>
+                                        <span class="diagram-node-sub">RAM Buffer Zeroized</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 9: PRIVACY MEASURES (OPEN EDITORIAL + DATA LIFECYCLE DIAGRAM) -->
+                <div id="view-privacy" class="view-panel hidden">
+                    <div class="about-editorial-page">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                            <div>
+                                <span class="about-editorial-eyebrow">Privacy by Design &amp; Cryptographic
+                                    Guarantees</span>
+                                <h1 class="about-editorial-headline">Enterprise Zero-Retention Security Architecture
+                                </h1>
+                            </div>
+                            <span
+                                style="padding: 4px 12px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700; background: var(--status-safe-bg); color: var(--status-safe); border: 1px solid var(--status-safe-border);">
+                                ● Ephemeral Enclave Active
+                            </span>
+                        </div>
+                        <p class="about-editorial-intro">
+                            Raw audio streams are processed exclusively in volatile process RAM and purged immediately
+                            following inference. Voiceprints are stored solely as one-way 512-dimensional mathematical
+                            embeddings.
+                        </p>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Diagram: 4-Stage Zero-Trace Data Lifecycle -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">The 4-Stage Zero-Trace Audio Processing Flow</h2>
+                            <p class="editorial-body-text">
+                                Visual blueprint showing the lifecycle of speech waveforms from ingestion to instant
+                                memory purge:
+                            </p>
+
+                            <div class="diagram-canvas-wrap">
+                                <div class="diagram-flow-track">
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 01</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">1. Ingestion</div>
+                                        <span class="diagram-node-sub">TLS 1.3 into RAM Buffer</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 02</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M2 20h20" />
+                                                <path d="M5 20V10" />
+                                                <path d="M9 20V4" />
+                                                <path d="M13 20v-8" />
+                                                <path d="M17 20V7" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">2. Tensor Feature</div>
+                                        <span class="diagram-node-sub">Zero Disk Write</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 03</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <path d="M12 6v6l4 2" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">3. Trust Scoring</div>
+                                        <span class="diagram-node-sub">&lt; 45ms Multi-Factor</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STAGE 04</span>
+                                        <div style="color: var(--status-safe);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <polyline points="20 6 9 17 4 12" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">4. Memory Scrub</div>
+                                        <span class="diagram-node-sub">RAM PCM Zeroized</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Data Protection Guarantees (Open Editorial Rows) -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">Cryptographic Guarantees &amp; Tenant Controls</h2>
+
+                            <div class="arch-editorial-list">
+                                <div class="arch-editorial-item">
+                                    <div class="arch-editorial-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2.2">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="arch-editorial-item-title">Biometric Revocation Control &amp; Right
+                                            to Erasure</div>
+                                        <div class="arch-editorial-item-desc">Enrolled voiceprint profile hashes can be
+                                            invalidated instantly via REST API. When revoked, the 512-dimensional
+                                            embedding vector is permanently purged from vector memory indices.</div>
+                                        <button class="btn btn-secondary btn-sm" style="margin-top: 10px;"
+                                            onclick="app.showToast('All ephemeral buffer enclaves verified clean.')">Run
+                                            Enclave Hygiene Check</button>
+                                    </div>
+                                </div>
+
+                                <div class="arch-editorial-item">
+                                    <div class="arch-editorial-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2.2">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" />
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="arch-editorial-item-title">Customer Data Training Isolation</div>
+                                        <div class="arch-editorial-item-desc">Customer voice samples are NEVER used for
+                                            foundational AI model training. All synthesis and analysis occur strictly in
+                                            dedicated tenant runtime environments.</div>
+                                        <button class="btn btn-secondary btn-sm" style="margin-top: 10px;"
+                                            onclick="app.showToast('Tenant KMS Key Status: Active & Healthy')">Inspect
+                                            KMS Encryption</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 10: ABOUT OUR APP (OPEN EDITORIAL LAYOUT - ZERO CARDS / ZERO BOXES) -->
+                <div id="view-about" class="view-panel hidden">
+                    <div class="about-editorial-page">
+
+                        <!-- Header Area -->
+                        <span class="about-editorial-eyebrow">Platform Overview &amp; Architecture</span>
+                        <h1 class="about-editorial-headline">Next-Gen Generative Speech &amp; Zero-Trust Acoustic
+                            Defense</h1>
+                        <p class="about-editorial-intro">
+                            CallShadow brings together state-of-the-art generative speech synthesis, sub-40ms voice
+                            changing, and our military-grade Explainable Trust Engine into a unified, privacy-first
+                            neural intelligence architecture.
+                        </p>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Section: What is CallShadow? -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">What is CallShadow?</h2>
+                            <p class="editorial-body-text">
+                                CallShadow is a unified neural voice intelligence platform designed to address both
+                                sides of the modern acoustic ecosystem. On one side, it provides developers, studios,
+                                and contact centers with ultra-realistic, low-latency generative speech synthesis,
+                                expressive voice cloning, and real-time voice modification. On the other side, it
+                                provides enterprise security operations (SOC) teams with deepfake detection, continuous
+                                biometric speaker identity verification, and multi-factor explainable trust scoring to
+                                safeguard critical voice communication channels against synthetic voice fraud and social
+                                engineering attacks.
+                            </p>
+                        </div>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Section: Why CallShadow? -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">Why CallShadow?</h2>
+                            <p class="editorial-body-text">
+                                As generative audio models become indistinguishable from genuine human speech,
+                                voice-based trust channels face unprecedented risk. Legacy interactive voice response
+                                (IVR) systems remain robotic and frustrating, while contact centers and financial
+                                authorization workflows are increasingly targeted by sophisticated voice cloning
+                                attacks. CallShadow eliminates these vulnerabilities by replacing opaque black-box
+                                detectors with a transparent, 0–100 additive trust waterfall that provides forensic
+                                acoustic rationale in under 38 milliseconds without storing or exposing customer audio.
+                            </p>
+                        </div>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Section: How the Platform Works -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">How the Platform Works</h2>
+                            <p class="editorial-body-text">
+                                The platform operates on a zero-retention, ephemeral-first pipeline. When an audio
+                                stream is received via TLS 1.3 encrypted endpoints, raw PCM waveforms are buffered
+                                exclusively in volatile RAM enclaves. Real-time neural transformers extract multi-layer
+                                acoustic spectrograms and 512-dimensional speaker embeddings. The Explainable Trust
+                                Engine analyzes fundamental vocal tract resonance, phase coherence, and behavioral
+                                continuity before returning an immutable cryptographic verdict. Upon completion, raw
+                                audio buffers are immediately zeroized and purged from active memory.
+                            </p>
+                        </div>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Section: Core AI Architecture -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">Core AI Architecture</h2>
+                            <p class="editorial-body-text">
+                                Our underlying intelligence pipeline is powered by three synchronized neural layers
+                                engineered for sub-millisecond inference and high acoustic fidelity:
+                            </p>
+
+                            <div class="arch-editorial-list">
+                                <!-- Layer 1 -->
+                                <div class="arch-editorial-item">
+                                    <div class="arch-editorial-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2.2">
+                                            <path d="M12 2v20M17 5v14M7 5v14M2 9v6M22 9v6" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="arch-editorial-item-title">Neural Acoustic Classifier</div>
+                                        <div class="arch-editorial-item-desc">
+                                            Fine-tuned Wav2Vec2 transformer backbone extracting mel-frequency cepstral
+                                            coefficients (MFCC) and phase stability metrics to detect synthetic vocoder
+                                            artifacts, jitter anomalies, and pitch monotonicity in real-time.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Layer 2 -->
+                                <div class="arch-editorial-item">
+                                    <div class="arch-editorial-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2.2">
+                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                            <circle cx="9" cy="7" r="4" />
+                                            <line x1="19" y1="8" x2="19" y2="14" />
+                                            <line x1="22" y1="11" x2="16" y2="11" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="arch-editorial-item-title">Speaker Biometrics Engine</div>
+                                        <div class="arch-editorial-item-desc">
+                                            ECAPA-TDNN neural architecture computing 512-dimensional speaker embeddings,
+                                            executing fast cosine distance verification against registered voiceprint
+                                            profiles with zero disk footprint.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Layer 3 -->
+                                <div class="arch-editorial-item">
+                                    <div class="arch-editorial-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2.2">
+                                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="arch-editorial-item-title">Generative Voice Studio</div>
+                                        <div class="arch-editorial-item-desc">
+                                            Physics-accurate acoustic diffusion and HiFi-GAN vocoders delivering
+                                            studio-grade 48kHz speech synthesis, cross-lingual voice dubbing, video
+                                            captioning, and dynamic voice modification with sub-40ms execution.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Section: Runtime Operational Specifications -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">Runtime Operational Specifications</h2>
+                            <p class="editorial-body-text">
+                                Verified performance benchmarks and compliance parameters across production enterprise
+                                deployments:
+                            </p>
+
+                            <div class="specs-editorial-table">
+                                <div class="specs-editorial-row">
+                                    <span class="specs-editorial-key">Inference Latency</span>
+                                    <span class="specs-editorial-val">
+                                        <span style="color: var(--status-safe); font-size: 11px;">●</span> &lt; 38ms
+                                        (P95 Telemetry)
+                                    </span>
+                                </div>
+                                <div class="specs-editorial-row">
+                                    <span class="specs-editorial-key">Supported Audio Formats</span>
+                                    <span class="specs-editorial-val">WAV, MP3, FLAC, M4A (16kHz – 48kHz PCM)</span>
+                                </div>
+                                <div class="specs-editorial-row">
+                                    <span class="specs-editorial-key">Biometric Embedding Space</span>
+                                    <span class="specs-editorial-val">512-dimensional ECAPA-TDNN Latent Vectors</span>
+                                </div>
+                                <div class="specs-editorial-row">
+                                    <span class="specs-editorial-key">Memory Retention Policy</span>
+                                    <span class="specs-editorial-val">Zero-Retention Volatile RAM Scrubbing</span>
+                                </div>
+                                <div class="specs-editorial-row">
+                                    <span class="specs-editorial-key">Transport &amp; Storage Encryption</span>
+                                    <span class="specs-editorial-val">TLS 1.3 In Transit • AES-256 Dedicated KMS</span>
+                                </div>
+                                <div class="specs-editorial-row">
+                                    <span class="specs-editorial-key">Concurrent Verification Capacity</span>
+                                    <span class="specs-editorial-val">12,000+ Concurrent Audio Streams / Node</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- VIEW 11: SETTINGS (OPEN EDITORIAL LAYOUT + POLICY FLOW DIAGRAM) -->
+                <div id="view-settings" class="view-panel hidden">
+                    <div class="about-editorial-page">
+                        <span class="about-editorial-eyebrow">System Configuration &amp; Policies</span>
+                        <h1 class="about-editorial-headline">SOC Console Operator Settings</h1>
+                        <p class="about-editorial-intro">
+                            Configure active security thresholds, automated step-up authentication triggers, and
+                            operator preferences across all tenant endpoints.
+                        </p>
+
+                        <!-- Unboxed Settings Form -->
+                        <div
+                            style="display: flex; flex-direction: column; gap: 16px; margin: 28px 0; max-width: 600px;">
+                            <div>
+                                <label
+                                    style="font-size: 11.5px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Operator
+                                    Identity &amp; Lead</label>
+                                <input type="text" class="form-input" style="width: 100%;" value="Sophia (SOC Lead)">
+                            </div>
+                            <div>
+                                <label
+                                    style="font-size: 11.5px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Step-Up
+                                    Challenge Score Threshold (&lt; X triggers challenge)</label>
+                                <input type="number" class="form-input" style="width: 100%;" value="65">
+                            </div>
+                            <button class="btn btn-primary" style="padding: 10px 22px; align-self: flex-start;"
+                                onclick="app.showToast('Security threshold settings updated.')">Save Policy Settings
+                                →</button>
+                        </div>
+
+                        <hr class="editorial-divider">
+
+                        <!-- Diagram: Step-Up Challenge Policy Flow -->
+                        <div class="editorial-section">
+                            <h2 class="editorial-section-title">Automated Risk &amp; Step-Up Enforcement Architecture
+                            </h2>
+                            <p class="editorial-body-text">
+                                Real-time policy decision flow determining when step-up biometric challenges are
+                                dynamically triggered:
+                            </p>
+
+                            <div class="diagram-canvas-wrap">
+                                <div class="diagram-flow-track">
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">EVALUATION</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <path d="M12 6v6l4 2" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Score &lt; 65 Trust</div>
+                                        <span class="diagram-node-sub">Acoustic anomaly detected</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">POLICY CHECK</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">High Context ($ &gt; 5k)</div>
+                                        <span class="diagram-node-sub">Sensitive transaction rule</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">STEP-UP TRIGGER</span>
+                                        <div style="color: var(--orange-primary);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Dynamic Challenge</div>
+                                        <span class="diagram-node-sub">Prompt randomized phrase</span>
+                                    </div>
+                                    <div class="diagram-arrow-connector"><svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg></div>
+                                    <div class="diagram-stage-node">
+                                        <span class="diagram-node-badge">SOC LOG</span>
+                                        <div style="color: var(--status-safe);"><svg width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <polyline points="20 6 9 17 4 12" />
+                                            </svg></div>
+                                        <div class="diagram-node-title">Alert &amp; Quarantine</div>
+                                        <span class="diagram-node-sub">Immediate SIEM notify</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

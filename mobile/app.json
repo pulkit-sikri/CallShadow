@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "CallShadow",
+    "slug": "callshadow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/callshadow-logo.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F8F6F2",
+        "foregroundImage": "./assets/callshadow-logo.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "CallShadow needs access to your microphone to capture speaker audio for neural synthetic voice detection."
+        }
+      ]
+    ],
+    "web": {
+      "favicon": "./assets/callshadow-logo.png"
+    }
+  }
+}
