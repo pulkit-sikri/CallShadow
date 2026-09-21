@@ -140,6 +140,28 @@ class RealSpeakerVerifier(SpeakerVerifierInterface):
             logger.debug(f"glob_mean load notice: {e}")
 
         logger.info("RealSpeakerVerifier ready.")
+        self._load_from_db()
+
+    def _load_from_db(self):
+        """Loads enrolled voiceprints from the SQLite database."""
+        try:
+            import json
+            from backend.models.database import SessionLocal, Voiceprint
+            db = SessionLocal()
+            try:
+                records = db.query(Voiceprint).all()
+                for r in records:
+                    try:
+                        emb_list = json.loads(r.embedding)
+                        self.registered_speakers[str(r.user_id)] = np.array(emb_list, dtype=np.float32)
+                    except Exception:
+                        pass
+                if records:
+                    logger.info(f"Loaded {len(records)} voiceprints from database.")
+            finally:
+                db.close()
+        except Exception as e:
+            logger.debug(f"Voiceprint DB preload notice: {e}")
 
     def _extract_embedding(self, waveform_16k: np.ndarray) -> np.ndarray:
         # Pre-trim leading/trailing silence to avoid silence-induced embedding shifts
@@ -189,6 +211,29 @@ class RealSpeakerVerifier(SpeakerVerifierInterface):
 
         embedding = self._extract_embedding(waveform_16k)
         self.registered_speakers[speaker_id] = embedding
+
+        # Persist to SQLite database if speaker_id maps to an integer user ID
+        try:
+            import json
+            from datetime import datetime
+            from backend.models.database import SessionLocal, Voiceprint
+            db = SessionLocal()
+            try:
+                user_id = int(speaker_id) if speaker_id.isdigit() else None
+                if user_id is not None:
+                    vp = db.query(Voiceprint).filter(Voiceprint.user_id == user_id).first()
+                    emb_json = json.dumps(embedding.tolist())
+                    if vp:
+                        vp.embedding = emb_json
+                        vp.updated_at = datetime.utcnow()
+                    else:
+                        vp = Voiceprint(user_id=user_id, embedding=emb_json)
+                        db.add(vp)
+                    db.commit()
+            finally:
+                db.close()
+        except Exception as e:
+            logger.debug(f"Voiceprint DB persist notice: {e}")
         
         dur_raw = len(waveform_16k) / 16000.0
         trimmed = _trim_silence(waveform_16k)
@@ -211,6 +256,9 @@ class RealSpeakerVerifier(SpeakerVerifierInterface):
                 registered_speaker_id=speaker_id,
                 message="Speaker verification model not active in current MVP pipeline.",
             )
+
+        if speaker_id not in self.registered_speakers:
+            self._load_from_db()
 
         if speaker_id not in self.registered_speakers:
             return SpeakerVerificationResult(

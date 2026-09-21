@@ -90,10 +90,22 @@ class TestSpeakerEnrollUpsert(unittest.TestCase):
     """Part A.2 - Speaker enrollment upsert."""
 
     def setUp(self):
+        from backend.models.database import SessionLocal, User, Voiceprint
+        from backend.services.real_speaker_verifier import real_speaker_verifier
         self.token_a = _register_and_login(client, "enroll_upsert_a@example.com", "Enroll A")
         self.token_b = _register_and_login(client, "enroll_upsert_b@example.com", "Enroll B")
         self.wav_a = _make_wav(440.0)
         self.wav_b = _make_wav(880.0)
+        db = SessionLocal()
+        try:
+            for em in ["enroll_upsert_a@example.com", "enroll_upsert_b@example.com"]:
+                u = db.query(User).filter(User.email == em).first()
+                if u:
+                    db.query(Voiceprint).filter(Voiceprint.user_id == u.id).delete()
+                    real_speaker_verifier.registered_speakers.pop(str(u.id), None)
+            db.commit()
+        finally:
+            db.close()
 
     def test_enroll_twice_leaves_exactly_one_voiceprint(self):
         """Re-enrolling must upsert (replace), not duplicate."""

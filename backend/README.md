@@ -87,10 +87,16 @@ Key variables:
 >     --index-url https://download.pytorch.org/whl/cpu
 > ```
 >
-> Then install all other dependencies:
+> Then install production dependencies:
 >
 > ```bash
 > pip install -r backend/requirements.txt
+> ```
+>
+> For running tests and development tools:
+>
+> ```bash
+> pip install -r backend/requirements-dev.txt
 > ```
 
 ---

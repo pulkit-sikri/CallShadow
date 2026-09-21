@@ -54,18 +54,18 @@ async def websocket_live_mic(websocket: WebSocket, token: Optional[str] = Query(
     origin = websocket.headers.get("origin")
     allowed = settings.get_allowed_origins_set()
 
+    # Extract token from Authorization header or cookie or query param
+    auth_header = websocket.headers.get("authorization") or websocket.headers.get("Authorization")
+    header_token = None
+    if auth_header and auth_header.startswith("Bearer "):
+        header_token = auth_header.split(" ", 1)[1].strip()
+
+    active_token = header_token or token or websocket.cookies.get("session_token")
+
     if origin:
         if origin.strip().lower() not in allowed:
             logger.warning(f"WebSocket rejected: Origin '{origin}' not in configured ALLOWED_ORIGINS ({allowed})")
             await websocket.close(code=1008, reason="Policy Violation: Origin not allowed")
-            return
-    else:
-        # Native mobile clients (React Native) send no Origin header.
-        # Allow missing Origin in DEBUG mode, or in production if client provides a session token.
-        has_auth = bool(token or websocket.cookies.get("session_token"))
-        if not settings.DEBUG and not has_auth:
-            logger.warning("WebSocket rejected: Missing Origin header for unauthenticated connection in production mode")
-            await websocket.close(code=1008, reason="Policy Violation: Missing Origin header")
             return
 
     # 2. Enforce connection concurrency cap per client IP (proxy-aware)
@@ -83,11 +83,10 @@ async def websocket_live_mic(websocket: WebSocket, token: Optional[str] = Query(
 
         detector = get_voice_detector()
 
-        # Authenticate user if token provided in query, cookie, or handshake
+        # Authenticate user if token provided in header, cookie, query, or handshake
         authenticated_user_id = None
         authenticated_user_email = None
 
-        active_token = token or websocket.cookies.get("session_token")
         if active_token:
             db = SessionLocal()
             try:
@@ -156,6 +155,12 @@ async def websocket_live_mic(websocket: WebSocket, token: Optional[str] = Query(
                                         logger.info(f"WebSocket session authenticated via handshake token for {user.email}")
                                 finally:
                                     db.close()
+
+                            # If missing Origin in non-DEBUG mode, enforce that connection is authenticated
+                            if not origin and not settings.DEBUG and not authenticated_user_id:
+                                logger.warning("WebSocket rejected: Native client missing valid authentication token")
+                                await websocket.close(code=1008, reason="Policy Violation: Authentication required")
+                                return
 
                             if "speaker_id" in payload and payload["speaker_id"]:
                                 speaker_id = str(payload["speaker_id"])

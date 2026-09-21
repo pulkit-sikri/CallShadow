@@ -312,3 +312,60 @@ def test_upload_with_context_and_trust_score():
         assert "trust_score" in data_empty
         ts_empty = data_empty["trust_score"]
         assert ts_empty["decision"] == "STEP_UP_VERIFICATION_REQUIRED"
+
+
+def test_voiceprint_persistence_across_app_restart():
+    """
+    Test voiceprint persistence: enroll a voiceprint, simulate an app/verifier restart
+    by re-instantiating the verifier and TestClient, and verify matching speaker.
+    """
+    sr = 16000
+    t = np.linspace(0, 1.5, int(sr * 1.5))
+    sine_audio = 0.5 * np.sin(2 * np.pi * 520 * t)
+    buf = io.BytesIO()
+    sf.write(buf, sine_audio.astype(np.float32), sr, format='WAV')
+    wav_bytes = buf.getvalue()
+
+    # 1. Register & Login user
+    email = f"persistence_{int(t[-1]*1000)}@example.com"
+    client.post("/api/auth/register", json={
+        "full_name": "Persistence User",
+        "email": email,
+        "password": "Password123!",
+        "confirm_password": "Password123!"
+    })
+    login_res = client.post("/api/auth/login", json={"email": email, "password": "Password123!"})
+    token = login_res.json()["token"]
+
+    speaker_id = f"persistent_speaker_{int(t[-1]*1000)}"
+
+    # 2. Enroll voiceprint
+    enroll_res = client.post(
+        "/api/speaker/enroll",
+        headers={"Authorization": f"Bearer {token}"},
+        data={"speaker_id": speaker_id},
+        files={"file": ("enroll_sine.wav", wav_bytes, "audio/wav")}
+    )
+    assert enroll_res.status_code == 200
+    assert enroll_res.json()["success"] is True
+
+    # 3. Simulate app restart: clear in-memory cache and reload from database
+    from backend.services.real_speaker_verifier import real_speaker_verifier
+    real_speaker_verifier.registered_speakers.clear()
+    real_speaker_verifier._load_from_db()
+
+    fresh_client = TestClient(app)
+
+    # 4. Verify against enrolled speaker on fresh app/client instance
+    verify_res = fresh_client.post(
+        "/api/speaker/verify",
+        headers={"Authorization": f"Bearer {token}"},
+        data={"speaker_id": speaker_id},
+        files={"file": ("verify_sine.wav", wav_bytes, "audio/wav")}
+    )
+    assert verify_res.status_code == 200
+    verify_data = verify_res.json()
+    assert verify_data["verified"] is True
+    assert verify_data["similarity_score"] >= 0.75
+    assert verify_data["registered_speaker_id"] == email
+
