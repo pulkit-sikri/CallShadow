@@ -9,3 +9,4 @@ mobile/.expo/
 *.db
 *.sqlite
 *.log
+.venv/

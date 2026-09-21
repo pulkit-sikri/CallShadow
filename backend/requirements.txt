@@ -41,3 +41,4 @@ sqlalchemy~=2.0.52
 
 # --- PDF / Reporting ---
 reportlab~=5.0.1
+python-multipart
