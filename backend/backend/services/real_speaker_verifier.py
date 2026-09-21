@@ -83,31 +83,9 @@ class RealSpeakerVerifier(SpeakerVerifierInterface):
         self.embedding_model = None
         self.classifier = None
         self._ready = True
-
-        try:
-            from speechbrain.inference.speaker import EncoderClassifier
-            from speechbrain.utils.fetching import LocalStrategy
-            logger.info(f"Loading frozen embedding extractor: '{embedding_source}'...")
-
-            try:
-                self.embedding_model = EncoderClassifier.from_hparams(
-                    source=embedding_source,
-                    savedir="./pretrained_ecapa",
-                    local_strategy=LocalStrategy.COPY
-                )
-            except Exception as e_symlink:
-                logger.warning(f"LocalStrategy.COPY direct init notice ({e_symlink}), trying default init...")
-                self.embedding_model = EncoderClassifier.from_hparams(
-                    source=embedding_source,
-                    savedir="./pretrained_ecapa",
-                )
-
-            logger.info("SpeechBrain ECAPA-TDNN embedding extractor initialized successfully.")
-        except Exception as e:
-            logger.warning(
-                f"SpeechBrain embedding extractor unavailable ({e}), "
-                "using spectral feature fallback."
-            )
+        self._embedding_source = embedding_source
+        self._model_init_attempted = False
+        self.glob_mean = None
 
         try:
             pt_paths = [
@@ -128,7 +106,6 @@ class RealSpeakerVerifier(SpeakerVerifierInterface):
         except Exception as e:
             logger.warning(f"SpeakerMatchClassifier weights load error ({e}), using cosine fallback.")
 
-        self.glob_mean = None
         try:
             norm_ckpt_path = Path("./pretrained_ecapa/mean_var_norm_emb.ckpt")
             if norm_ckpt_path.exists():
@@ -141,6 +118,38 @@ class RealSpeakerVerifier(SpeakerVerifierInterface):
 
         logger.info("RealSpeakerVerifier ready.")
         self._load_from_db()
+
+    def _ensure_embedding_model(self):
+        """Lazily initialize heavy SpeechBrain model on first demand."""
+        if self._model_init_attempted:
+            return self.embedding_model
+        self._model_init_attempted = True
+
+        try:
+            from speechbrain.inference.speaker import EncoderClassifier
+            from speechbrain.utils.fetching import LocalStrategy
+            logger.info(f"Loading frozen embedding extractor: '{self._embedding_source}'...")
+
+            try:
+                self.embedding_model = EncoderClassifier.from_hparams(
+                    source=self._embedding_source,
+                    savedir="./pretrained_ecapa",
+                    local_strategy=LocalStrategy.COPY
+                )
+            except Exception as e_symlink:
+                logger.warning(f"LocalStrategy.COPY direct init notice ({e_symlink}), trying default init...")
+                self.embedding_model = EncoderClassifier.from_hparams(
+                    source=self._embedding_source,
+                    savedir="./pretrained_ecapa",
+                )
+
+            logger.info("SpeechBrain ECAPA-TDNN embedding extractor initialized successfully.")
+        except Exception as e:
+            logger.warning(
+                f"SpeechBrain embedding extractor unavailable ({e}), "
+                "using spectral feature fallback."
+            )
+        return self.embedding_model
 
     def _load_from_db(self):
         """Loads enrolled voiceprints from the SQLite database."""
@@ -164,6 +173,9 @@ class RealSpeakerVerifier(SpeakerVerifierInterface):
             logger.debug(f"Voiceprint DB preload notice: {e}")
 
     def _extract_embedding(self, waveform_16k: np.ndarray) -> np.ndarray:
+        # Lazily ensure embedding model is available
+        self._ensure_embedding_model()
+
         # Pre-trim leading/trailing silence to avoid silence-induced embedding shifts
         trimmed_wav = _trim_silence(waveform_16k)
         if len(trimmed_wav) == 0:
