@@ -37,7 +37,7 @@ httpx~=0.28.1
 aiofiles~=23.1.0
 
 # --- Database ---
-sqlalchemy~=2.0.52
+sqlalchemy~=2.0.54
 
 # --- PDF / Reporting ---
 reportlab~=5.0.1
