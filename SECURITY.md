@@ -1,17 +1,22 @@
 # Security Policy
 
+# Security Policy
+
 ## Reporting a Vulnerability
 
-We take the security and integrity of CallShadow seriously. If you discover a potential security vulnerability, please report it to us responsibly.
+If you find a security vulnerability in CallShadow, please do not open a
+public issue.
 
-### How to Report
+Instead, use GitHub's private reporting: go to the **Security** tab of this
+repository and click **Report a vulnerability**.
 
-1. **GitHub Private Vulnerability Reporting (Recommended):**
-   If you have a GitHub account, please submit a report privately via the **"Report a vulnerability"** button under the **Security** tab of this repository.
+Please include:
+- A description of the issue
+- Steps to reproduce it
+- The potential impact
 
-2. **Email Disclosure:**
-   Alternatively, you can email our security team directly at:
-   `<YOUR_SECURITY_CONTACT_EMAIL>`
+I'll respond as soon as I can and work with you on a fix before any public
+disclosure.
 
 ### What to Include
 
@@ -22,6 +27,6 @@ Please provide:
 
 ### What to Expect
 
-- **Acknowledgement:** We will acknowledge receipt of your report within 48 hours.
+- **Acknowledgement:** We will acknowledge receipt of your report.
 - **Assessment & Fix:** We will investigate and coordinate a patch or mitigation.
 - **Disclosure:** We ask that you maintain confidentiality until an official fix is released.
