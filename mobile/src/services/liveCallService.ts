@@ -50,13 +50,17 @@ class LiveCallService {
     this.sessionId = `live_sess_${Date.now()}`;
     const startedAt = new Date().toISOString();
     const token = getApiAuthToken() || '';
+    // NOTE: wsUrl contains ?token= query param — NEVER log this variable.
     const wsUrl = `${getWebSocketBaseUrl()}/api/audio/live${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+    // Log only the base path, not the full URL (which contains the auth token)
+    const wsBasePath = `${getWebSocketBaseUrl()}/api/audio/live`;
 
     try {
+      console.log(`[WS Live] Connecting to ${wsBasePath}${token ? ' (authenticated)' : ' (anonymous)'}`);
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {
-        // Step 1: Send initial handshake
+        // Step 1: Send initial handshake (token sent in message body, not logged)
         const handshake = {
           token: token || undefined,
           sample_rate: 16000,
@@ -66,6 +70,7 @@ class LiveCallService {
           },
         };
         this.socket?.send(JSON.stringify(handshake));
+        console.log('[WS Live] Connected and handshake sent');
         callbacks?.onConnected?.();
 
         // Step 2: Push-to-Talk audio packet stream dispatcher
@@ -102,7 +107,8 @@ class LiveCallService {
       };
 
       this.socket.onerror = (err) => {
-        console.warn('[WebSocket Live] Connection notice:', err);
+        // Log base path only — never log wsUrl which contains the auth token
+        console.warn(`[WS Live] Connection error on ${wsBasePath}:`, err);
         callbacks?.onError?.(err);
       };
 
@@ -111,7 +117,7 @@ class LiveCallService {
         callbacks?.onClose?.();
       };
     } catch (err) {
-      console.warn('[WebSocket Live] Failed to establish WebSocket connection:', err);
+      console.warn(`[WS Live] Failed to connect to ${wsBasePath}:`, err);
       callbacks?.onError?.(err);
     }
 

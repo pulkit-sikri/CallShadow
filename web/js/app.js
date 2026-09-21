@@ -4,7 +4,6 @@
 class SentinelApp {
     constructor() {
         this.currentView = 'landing';
-        this.authToken = localStorage.getItem('callshadow_auth_token') || sessionStorage.getItem('callshadow_auth_token') || localStorage.getItem('vocalshield_auth_token') || sessionStorage.getItem('vocalshield_auth_token') || "";
         this.currentUser = null;
         try {
             const stored = localStorage.getItem('callshadow_auth_user') || sessionStorage.getItem('callshadow_auth_user') || localStorage.getItem('vocalshield_auth_user') || sessionStorage.getItem('vocalshield_auth_user');
@@ -12,7 +11,7 @@ class SentinelApp {
         } catch (e) {
             this.currentUser = null;
         }
-        this.isAuthenticated = Boolean(this.authToken && this.currentUser);
+        this.isAuthenticated = Boolean(this.currentUser);
         this.intendedView = null;
 
         this.selectedUploadFile = null;
@@ -24,6 +23,16 @@ class SentinelApp {
         this.analysisHistory = [];
         this.latestAnalysis = null;
         this.heroWaveformAnimId = null;
+    }
+
+    escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     async init() {
@@ -45,7 +54,7 @@ class SentinelApp {
             window.trustEngine.renderTrustResult(initDemo);
         }
 
-        // Verify authentication state with backend
+        // Verify authentication state with backend via HttpOnly cookie
         await this.checkAuthStatus();
 
         // Check hash routing
@@ -54,8 +63,8 @@ class SentinelApp {
     }
 
     async checkAuthStatus() {
-        if (this.authToken) {
-            try {
+        try {
+            if (window.apiService && typeof window.apiService.getProfile === 'function') {
                 const profile = await window.apiService.getProfile();
                 if (profile) {
                     this.currentUser = profile;
@@ -64,11 +73,10 @@ class SentinelApp {
                 } else {
                     this.currentUser = null;
                     this.isAuthenticated = false;
-                    this.authToken = "";
                 }
-            } catch (err) {
-                console.warn("Auth check notice:", err);
             }
+        } catch (err) {
+            console.warn("Auth check notice:", err);
         }
         this.renderNavbarAuth();
     }
@@ -310,7 +318,7 @@ class SentinelApp {
         if (!container) return;
 
         if (this.isAuthenticated && this.currentUser) {
-            const displayName = this.currentUser.full_name || 'User';
+            const displayName = this.escapeHtml(this.currentUser.full_name || 'User');
             container.innerHTML = `
                 <span class="nav-user-pill">👤 ${displayName}</span>
                 <button class="btn-white-pill" onclick="app.navigateTo('dashboard')">Dashboard</button>
@@ -462,19 +470,18 @@ class SentinelApp {
             } else {
                 const res = await fetch(this.getBackendEndpoint('/api/auth/login'), {
                     method: 'POST',
+                    credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
                 data = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(data.detail || "Invalid email or password.");
-                if (data.token) {
-                    localStorage.setItem('callshadow_auth_token', data.token);
+                if (data.user) {
                     localStorage.setItem('callshadow_auth_user', JSON.stringify(data.user));
                 }
             }
 
             this.currentUser = data.user;
-            this.authToken = data.token;
             this.isAuthenticated = true;
 
             this.renderNavbarAuth();
@@ -543,6 +550,7 @@ class SentinelApp {
             } else {
                 const res = await fetch(this.getBackendEndpoint('/api/auth/register'), {
                     method: 'POST',
+                    credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         full_name: fullName,
@@ -553,14 +561,12 @@ class SentinelApp {
                 });
                 data = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(data.detail || "Registration failed.");
-                if (data.token) {
-                    localStorage.setItem('callshadow_auth_token', data.token);
+                if (data.user) {
                     localStorage.setItem('callshadow_auth_user', JSON.stringify(data.user));
                 }
             }
 
             this.currentUser = data.user;
-            this.authToken = data.token;
             this.isAuthenticated = true;
 
             this.renderNavbarAuth();
@@ -895,7 +901,7 @@ class SentinelApp {
         // Read params BEFORE opening WebSocket
         const speakerId = document.getElementById('live-speaker-id')?.value?.trim() || '';
         const txValue   = document.getElementById('live-tx-value')?.value?.trim() || '';
-        const token     = window.apiService ? window.apiService.getAuthToken() : (localStorage.getItem('authToken') || '');
+        const token     = window.apiService ? window.apiService.getAuthToken() : '';
         const ctxData   = txValue ? { transaction_value: parseFloat(txValue) } : {};
 
         // Wire up WebSocket callbacks BEFORE connecting
@@ -1229,7 +1235,7 @@ class SentinelApp {
             stepsEl.innerHTML = stepLabels.map((lbl, idx) => `
                 <div class="pipeline-step-item ${idx === 0 ? 'active' : ''}" data-step="${idx}">
                     <div class="step-indicator"><span class="step-dot"></span></div>
-                    <span class="step-label">${lbl}</span>
+                    <span class="step-label">${this.escapeHtml(lbl)}</span>
                 </div>
             `).join('');
         } else if (stepsEl) {
@@ -1336,7 +1342,7 @@ class SentinelApp {
         this.selectedUploadFile = e.target.files[0];
         const label = document.getElementById('dropzone-label');
         if (label) {
-            label.innerHTML = `Selected: <span style="color: #ff5a00;">${this.selectedUploadFile.name}</span> (${(this.selectedUploadFile.size / 1024 / 1024).toFixed(2)} MB)`;
+            label.innerHTML = `Selected: <span style="color: #ff5a00;">${this.escapeHtml(this.selectedUploadFile.name)}</span> (${(this.selectedUploadFile.size / 1024 / 1024).toFixed(2)} MB)`;
         }
     }
 
@@ -1463,11 +1469,11 @@ class SentinelApp {
                         const row = document.createElement('div');
                         row.className = 'live-chunk-row';
                         row.innerHTML = `
-                            <span class="live-chunk-time">#${i + 1} &nbsp; ${timeLabel}</span>
+                            <span class="live-chunk-time">#${i + 1} &nbsp; ${this.escapeHtml(timeLabel)}</span>
                             <div class="live-chunk-bar-wrap" style="flex:1; margin: 0 10px;">
                                 <div class="live-chunk-bar-fill" style="width:${barPct}%; background:${color};"></div>
                             </div>
-                            <span class="live-chunk-label" style="color:${color}; min-width:84px;">${label}</span>
+                            <span class="live-chunk-label" style="color:${color}; min-width:84px;">${this.escapeHtml(label)}</span>
                             <span class="live-chunk-score">${score}/100</span>
                         `;
                         chunkList.appendChild(row);
@@ -1536,11 +1542,8 @@ class SentinelApp {
     }
 
     async submitEnrollment() {
-        const name = document.getElementById('enroll-speaker-name')?.value;
-        if (!name) {
-            this.showToast("Please enter speaker identifier", "warning");
-            return;
-        }
+        // speaker name is optional/deprecated: the backend binds voiceprint to the authenticated user
+        const name = document.getElementById('enroll-speaker-name')?.value || null;
         if (!this.selectedEnrollFile) {
             this.showToast("Please attach a voice sample", "warning");
             return;
@@ -1566,19 +1569,26 @@ class SentinelApp {
         if (!tbody) return;
 
         tbody.innerHTML = this.analysisHistory.map(item => {
-            const isDanger = item.trustScore < 40 || (item.verdict && item.verdict.includes('Deepfake'));
+            const isDanger = item.trustScore < 40 || (item.verdict && String(item.verdict).includes('Deepfake'));
             const isWarning = item.trustScore >= 40 && item.trustScore < 70;
             const badgeColor = isDanger ? '#dc2626' : (isWarning ? '#d97706' : '#16a34a');
 
+            const safeId = this.escapeHtml(item.id || 'VS-4821');
+            const safeTime = this.escapeHtml(new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+            const safeInputType = this.escapeHtml(item.inputType || 'Upload');
+            const safeTrustScore = Number(item.trustScore) || 0;
+            const safeVerdict = this.escapeHtml(item.verdict || '');
+            const encodedId = encodeURIComponent(item.id || '');
+
             return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 10px 8px;"><strong style="color: #0f172a;">${item.id || 'VS-4821'}</strong></td>
-                    <td style="padding: 10px 8px; font-size: 11px; color: var(--text-muted);">${new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                    <td style="padding: 10px 8px; color: #334155;">${item.inputType || 'Upload'}</td>
-                    <td style="padding: 10px 8px;"><strong style="color: ${badgeColor};">${item.trustScore} / 100</strong></td>
-                    <td style="padding: 10px 8px;"><span style="color: ${badgeColor}; font-weight: 700;">${item.verdict}</span></td>
+                    <td style="padding: 10px 8px;"><strong style="color: #0f172a;">${safeId}</strong></td>
+                    <td style="padding: 10px 8px; font-size: 11px; color: var(--text-muted);">${safeTime}</td>
+                    <td style="padding: 10px 8px; color: #334155;">${safeInputType}</td>
+                    <td style="padding: 10px 8px;"><strong style="color: ${badgeColor};">${safeTrustScore} / 100</strong></td>
+                    <td style="padding: 10px 8px;"><span style="color: ${badgeColor}; font-weight: 700;">${safeVerdict}</span></td>
                     <td style="padding: 10px 8px;">
-                        <button class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 11px;" onclick="app.inspectHistoryItem('${item.id}')">
+                        <button class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 11px;" onclick="app.inspectHistoryItem(decodeURIComponent('${encodedId}'))">
                             Inspect
                         </button>
                     </td>
@@ -1605,13 +1615,13 @@ class SentinelApp {
         grid.innerHTML = window.MOCK_DATA.threatLibrary.map(t => `
             <div class="subcard" style="padding: 18px;">
                 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-                    <strong style="color: #0f172a; font-size: 13.5px;">${t.title}</strong>
+                    <strong style="color: #0f172a; font-size: 13.5px;">${this.escapeHtml(t.title)}</strong>
                     <span style="font-size: 10px; font-weight: 700; color: ${t.severity === 'Critical' ? '#dc2626' : '#ea580c'}; text-transform: uppercase;">
-                        ${t.severity}
+                        ${this.escapeHtml(t.severity)}
                     </span>
                 </div>
-                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px;">${t.description}</p>
-                <div style="font-size: 11px; color: var(--orange-dark); font-weight: 700;">Detection: ${t.detectionVector}</div>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px;">${this.escapeHtml(t.description)}</p>
+                <div style="font-size: 11px; color: var(--orange-dark); font-weight: 700;">Detection: ${this.escapeHtml(t.detectionVector)}</div>
             </div>
         `).join('');
     }
@@ -1638,10 +1648,6 @@ class SentinelApp {
                 : (window.location.port && window.location.port !== '8000' ? `${window.location.protocol}//${window.location.hostname}:8000` : '');
 
             const headers = { 'Content-Type': 'application/json' };
-            const token = (window.apiService && typeof window.apiService.getAuthToken === 'function')
-                ? window.apiService.getAuthToken()
-                : (localStorage.getItem('callshadow_auth_token') || localStorage.getItem('vocalshield_auth_token') || '');
-            if (token) headers['Authorization'] = `Bearer ${token}`;
 
             // Extract trust score sub-fields
             const ts = n.trustScore || {};
@@ -1755,6 +1761,7 @@ class SentinelApp {
 
             const res = await fetch(`${baseUrl}/api/reports/audit-pdf`, {
                 method: 'POST',
+                credentials: 'include',
                 headers,
                 body: JSON.stringify(pdfPayload)
             });

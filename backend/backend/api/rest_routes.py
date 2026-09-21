@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, status
+from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 
 from config.settings import settings
@@ -10,12 +10,14 @@ from backend.audio.preprocess import preprocess_audio
 from backend.ml.factory import get_voice_detector
 from backend.models.schemas import HealthResponse, UploadResponse, SpeakerVerificationResult, ContextDataSchema
 from backend.models.database import get_db, AnalysisLog, User
-from backend.services.auth_service import get_optional_current_user
+from backend.services.auth_service import get_current_user, get_optional_current_user
 from backend.services.analysis_service import analysis_service
 from backend.services.real_speaker_verifier import real_speaker_verifier
 
 logger = logging.getLogger("VoiceDetector.RESTRoutes")
 router = APIRouter(prefix="/api")
+
+MAX_UPLOAD_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB Limit
 
 @router.get("/health", response_model=HealthResponse)
 def health_check():
@@ -40,6 +42,7 @@ def health_check():
 
 @router.post("/audio/upload", response_model=UploadResponse)
 async def upload_audio_file(
+    request: Request,
     file: UploadFile = File(...),
     speaker_id: Optional[str] = Form(None),
     claimed_identity: Optional[str] = Form(None),
@@ -50,7 +53,7 @@ async def upload_audio_file(
     db: Session = Depends(get_db)
 ):
     """
-    Accepts multi-format audio files and performs 3-layer deepfake and risk analysis.
+    Accepts multi-format audio files (up to 25MB) and performs 3-layer deepfake and risk analysis.
     Optionally accepts speaker_id for speaker verification and context data parameters.
     Associates analysis record with authenticated user if logged in.
     """
@@ -60,11 +63,29 @@ async def upload_audio_file(
             detail="Filename missing from uploaded file payload."
         )
 
+    # Early rejection based on Content-Length header if provided
+    content_length_hdr = request.headers.get("content-length")
+    if content_length_hdr:
+        try:
+            if int(content_length_hdr) > MAX_UPLOAD_SIZE_BYTES:
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail=f"Uploaded file exceeds maximum allowed size ({MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB)."
+                )
+        except (ValueError, TypeError):
+            pass
+
     logger.info(f"[ANALYSIS] Request received: filename={file.filename}, content_type={file.content_type}")
     logger.info(f"[ANALYSIS] User ID: {current_user.id if current_user else 'anonymous'}")
 
     try:
-        content = await file.read()
+        content = await file.read(MAX_UPLOAD_SIZE_BYTES + 1)
+        if len(content) > MAX_UPLOAD_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Uploaded file exceeds maximum allowed size ({MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB)."
+            )
+
         content_len = len(content) if content else 0
         logger.info(f"[ANALYSIS] Bytes received: {content_len}")
 
@@ -108,7 +129,7 @@ async def upload_audio_file(
         return analysis_result
 
     except HTTPException:
-        # Re-raise HTTP errors (400/422) without wrapping them in a 500
+        # Explicitly re-raise HTTP exceptions (400, 413, 422) without wrapping in 500
         raise
     except ValueError as val_err:
         logger.warning(f"[ANALYSIS][ERROR] ValueError for '{file.filename}': {val_err}")
@@ -125,21 +146,44 @@ async def upload_audio_file(
 
 @router.post("/speaker/enroll")
 async def enroll_speaker(
+    request: Request,
     file: UploadFile = File(...),
-    speaker_id: str = Form(...)
+    speaker_id: Optional[str] = Form(None),  # DEPRECATED: identity is always bound to current_user; this field is ignored
+    current_user: User = Depends(get_current_user)
 ):
     """
-    Accepts audio file upload and speaker_id, pre-processes waveform to 16kHz,
-    and registers the speaker's vocal embedding.
+    Accepts audio file upload, pre-processes waveform to 16kHz, and UPSERTS (replaces) the
+    speaker's vocal embedding bound strictly to current_user.id. Re-enrolling always replaces
+    the existing voiceprint; there is exactly one voiceprint per user at all times.
+
+    The `speaker_id` form field is DEPRECATED and silently ignored — identity is always derived
+    from the authenticated session. Clients should stop sending this field.
+
+    Never returns embeddings in the response.
     """
-    if not speaker_id or not speaker_id.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="speaker_id must be provided for enrollment."
-        )
+    bound_key = str(current_user.id)
+    # speaker_id is deprecated and ignored; display name always uses authenticated user's email
+    display_name = current_user.email
+
+    content_length_hdr = request.headers.get("content-length")
+    if content_length_hdr:
+        try:
+            if int(content_length_hdr) > MAX_UPLOAD_SIZE_BYTES:
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail=f"Uploaded file exceeds maximum allowed size ({MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB)."
+                )
+        except (ValueError, TypeError):
+            pass
 
     try:
-        content = await file.read()
+        content = await file.read(MAX_UPLOAD_SIZE_BYTES + 1)
+        if len(content) > MAX_UPLOAD_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Uploaded file exceeds maximum allowed size ({MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB)."
+            )
+
         if not content:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -153,17 +197,21 @@ async def enroll_speaker(
             target_sr=settings.TARGET_SAMPLE_RATE
         )
 
-        success = real_speaker_verifier.register_speaker(speaker_id.strip(), waveform_16k)
+        # register_speaker upserts: dict assignment replaces any prior embedding for this bound_key
+        already_enrolled = bound_key in real_speaker_verifier.registered_speakers
+        success = real_speaker_verifier.register_speaker(bound_key, waveform_16k)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Speaker enrollment failed (verifier not ready or embedding failed)."
             )
 
+        action = "updated" if already_enrolled else "enrolled"
         return {
             "success": True,
-            "speaker_id": speaker_id.strip(),
-            "message": f"Successfully enrolled voiceprint for speaker '{speaker_id.strip()}'."
+            "speaker_id": display_name,
+            "message": f"Successfully {action} voiceprint for '{display_name}'.",
+            "upserted": already_enrolled
         }
     except HTTPException:
         raise
@@ -176,21 +224,41 @@ async def enroll_speaker(
 
 @router.post("/speaker/verify", response_model=SpeakerVerificationResult)
 async def verify_speaker_endpoint(
+    request: Request,
     file: UploadFile = File(...),
-    speaker_id: str = Form(...)
+    speaker_id: Optional[str] = Form(None),  # DEPRECATED: identity is always bound to current_user; this field is ignored
+    current_user: User = Depends(get_current_user)
 ):
     """
-    Accepts audio file upload and speaker_id, pre-processes waveform to 16kHz,
-    and verifies whether the voice matches the registered speaker embedding.
+    Accepts audio file upload, pre-processes waveform to 16kHz,
+    and verifies whether the voice matches current_user's single bound voiceprint embedding.
+    Returns a clear error if the user has not yet enrolled.
+
+    The `speaker_id` form field is DEPRECATED and silently ignored.
+    Never returns embeddings in the response.
     """
-    if not speaker_id or not speaker_id.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="speaker_id must be provided for verification."
-        )
+    bound_key = str(current_user.id)
+    display_name = current_user.email  # always tied to authenticated user
+
+    content_length_hdr = request.headers.get("content-length")
+    if content_length_hdr:
+        try:
+            if int(content_length_hdr) > MAX_UPLOAD_SIZE_BYTES:
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail=f"Uploaded file exceeds maximum allowed size ({MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB)."
+                )
+        except (ValueError, TypeError):
+            pass
 
     try:
-        content = await file.read()
+        content = await file.read(MAX_UPLOAD_SIZE_BYTES + 1)
+        if len(content) > MAX_UPLOAD_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Uploaded file exceeds maximum allowed size ({MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB)."
+            )
+
         if not content:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -204,8 +272,15 @@ async def verify_speaker_endpoint(
             target_sr=settings.TARGET_SAMPLE_RATE
         )
 
-        result = real_speaker_verifier.verify_speaker(speaker_id.strip(), waveform_16k)
-        return result
+        result = real_speaker_verifier.verify_speaker(bound_key, waveform_16k)
+        return SpeakerVerificationResult(
+            verified=result.verified,
+            similarity_score=result.similarity_score,
+            registered_speaker_id=display_name,
+            message=result.message
+        )
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.error(f"Error during speaker verification: {exc}", exc_info=True)
         raise HTTPException(
@@ -216,18 +291,21 @@ async def verify_speaker_endpoint(
 @router.get("/history")
 def get_analysis_history(
     limit: int = 20,
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Returns recent analysis audit logs from SQLite database.
-    If authenticated, returns only records belonging to the current user.
+    Requires authentication; strictly returns only records belonging to the current user.
+    Anonymous callers receive HTTP 401 Unauthorized.
     """
-    query = db.query(AnalysisLog)
-    if current_user:
-        query = query.filter((AnalysisLog.user_id == current_user.id) | (AnalysisLog.user_id.is_(None)))
-
-    logs = query.order_by(AnalysisLog.timestamp.desc()).limit(limit).all()
+    logs = (
+        db.query(AnalysisLog)
+        .filter(AnalysisLog.user_id == current_user.id)
+        .order_by(AnalysisLog.timestamp.desc())
+        .limit(limit)
+        .all()
+    )
     return [
         {
             "id": log.id,

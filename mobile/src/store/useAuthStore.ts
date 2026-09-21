@@ -1,7 +1,31 @@
 import { create } from 'zustand';
+import * as SecureStore from 'expo-secure-store';
 import { authService } from '../services/authService';
 import { setApiAuthToken } from '../services/apiClient';
 import { AuthState, LoginCredentials, RegisterCredentials } from '../types';
+
+const TOKEN_KEY = 'callshadow_session_token';
+
+/** Persist token securely; graceful no-op if SecureStore is unavailable (e.g. web preview). */
+async function saveTokenSecure(token: string | null): Promise<void> {
+  try {
+    if (token) {
+      await SecureStore.setItemAsync(TOKEN_KEY, token);
+    } else {
+      await SecureStore.deleteItemAsync(TOKEN_KEY);
+    }
+  } catch {
+    // expo-secure-store not available in this environment (web); ignore
+  }
+}
+
+async function loadTokenSecure(): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
 
 interface AuthActions {
   login: (credentials: LoginCredentials) => Promise<boolean>;
@@ -29,6 +53,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     try {
       const response = await authService.login(credentials);
       setApiAuthToken(response.token);
+      await saveTokenSecure(response.token);
       set({
         user: response.user,
         token: response.token,
@@ -54,6 +79,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     try {
       const response = await authService.register(credentials);
       setApiAuthToken(response.token);
+      await saveTokenSecure(response.token);
       set({
         user: response.user,
         token: response.token,
@@ -74,6 +100,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     try {
       const response = await authService.loginWithProvider(provider);
       setApiAuthToken(response.token);
+      await saveTokenSecure(response.token);
       set({
         user: response.user,
         token: response.token,
@@ -96,8 +123,9 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       // Ignore network errors on logout
     }
 
-    // 2. Clear global token holder and local store state unconditionally
+    // 2. Clear global token holder, secure store, and local store state unconditionally
     setApiAuthToken(null);
+    await saveTokenSecure(null);
     set({
       user: null,
       token: null,
@@ -108,7 +136,16 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   },
 
   checkSession: async () => {
-    const { token } = get();
+    // On app boot, load persisted token from SecureStore if zustand state is empty
+    let { token } = get();
+    if (!token) {
+      token = await loadTokenSecure();
+      if (token) {
+        setApiAuthToken(token);
+        set({ token });
+      }
+    }
+
     if (!token) {
       setApiAuthToken(null);
       set({ user: null, isAuthenticated: false });
@@ -122,10 +159,12 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         set({ user, isAuthenticated: true });
       } else {
         setApiAuthToken(null);
+        await saveTokenSecure(null);
         set({ user: null, token: null, isAuthenticated: false });
       }
     } catch {
       setApiAuthToken(null);
+      await saveTokenSecure(null);
       set({ user: null, token: null, isAuthenticated: false });
     }
   },

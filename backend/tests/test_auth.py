@@ -120,6 +120,30 @@ class TestAuthentication(unittest.TestCase):
         check2 = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
         self.assertEqual(check2.status_code, 401)
 
+    def test_session_token_stored_as_sha256_hash_in_db(self):
+        reg = client.post("/api/auth/register", json={
+            "full_name": "Hash Check User",
+            "email": "test_hashcheck@example.com",
+            "password": "Password123!",
+            "confirm_password": "Password123!"
+        })
+        self.assertEqual(reg.status_code, 200)
+        raw_token = reg.json()["token"]
+
+        # Raw token should NOT be stored plaintext in DB
+        db = SessionLocal()
+        user = db.query(User).filter(User.email == "test_hashcheck@example.com").first()
+        sessions = db.query(SessionToken).filter(SessionToken.user_id == user.id).all()
+        self.assertEqual(len(sessions), 1)
+        stored_db_token = sessions[0].token
+        
+        # Verify stored token is a 64-char SHA256 hex string and is not equal to raw_token
+        self.assertEqual(len(stored_db_token), 64)
+        self.assertNotEqual(stored_db_token, raw_token)
+        import hashlib
+        self.assertEqual(stored_db_token, hashlib.sha256(raw_token.encode("utf-8")).hexdigest())
+        db.close()
+
     def test_forgot_and_reset_password_flow(self):
         reg = client.post("/api/auth/register", json={
             "full_name": "Reset Tester",
@@ -129,20 +153,22 @@ class TestAuthentication(unittest.TestCase):
         })
         self.assertEqual(reg.status_code, 200)
 
-        # Forgot password
-        forgot = client.post("/api/auth/forgot-password", json={"email": "test_reset@example.com"})
-        self.assertEqual(forgot.status_code, 200)
-
-        # Query DB directly to get the generated reset token
+        # Generate reset token via auth_service
         db = SessionLocal()
+        from backend.services.auth_service import auth_service
+        raw_reset_token = auth_service.create_password_reset_token(db, "test_reset@example.com")
+        self.assertIsNotNone(raw_reset_token)
+
+        # Confirm DB stores only SHA-256 hash
         user = db.query(User).filter(User.email == "test_reset@example.com").first()
-        reset_token = user.reset_token
-        self.assertIsNotNone(reset_token)
+        import hashlib
+        self.assertEqual(len(user.reset_token), 64)
+        self.assertEqual(user.reset_token, hashlib.sha256(raw_reset_token.encode("utf-8")).hexdigest())
         db.close()
 
-        # Reset password with token
+        # Reset password with raw token
         reset_resp = client.post("/api/auth/reset-password", json={
-            "token": reset_token,
+            "token": raw_reset_token,
             "new_password": "NewSecretPassword456",
             "confirm_password": "NewSecretPassword456"
         })

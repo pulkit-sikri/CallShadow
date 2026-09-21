@@ -70,7 +70,7 @@ class ApiService {
             const url = `${this.getBaseUrl()}/api/audio/upload`;
             const res = await fetch(url, {
                 method: 'POST',
-                headers: this.getAuthToken() ? { 'Authorization': `Bearer ${this.getAuthToken()}` } : {},
+                credentials: 'include',
                 body: formData
             });
 
@@ -98,19 +98,20 @@ class ApiService {
     }
 
     // Enroll Speaker Voiceprint to /api/speaker/enroll
+    // NOTE: speaker_id is deprecated on the backend (identity is bound to the authenticated session).
+    // The speakerId param is only used locally as a display label in the fallback path.
     async enrollSpeakerVoice(speakerId, audioFile) {
-        if (!speakerId) throw new Error("Please specify a Speaker ID.");
         if (!audioFile) throw new Error("Please provide a voice sample file.");
 
         const formData = new FormData();
-        formData.append('speaker_id', speakerId.trim());
+        // speaker_id intentionally omitted — backend ignores it and binds voiceprint to authenticated user
         formData.append('file', audioFile);
 
         try {
             const url = `${this.getBaseUrl()}/api/speaker/enroll`;
             const res = await fetch(url, {
                 method: 'POST',
-                headers: this.getAuthToken() ? { 'Authorization': `Bearer ${this.getAuthToken()}` } : {},
+                credentials: 'include',
                 body: formData
             });
 
@@ -119,15 +120,15 @@ class ApiService {
                 throw new Error(data.detail || "Enrollment failed.");
             }
 
-            return { success: true, message: data.message || `Successfully enrolled voiceprint for '${speakerId}'`, isBackend: true };
+            return { success: true, message: data.message || `Voiceprint enrolled successfully for authenticated user.`, isBackend: true };
         } catch (err) {
             console.warn("[API Notice] /api/speaker/enroll unavailable. Storing in local profile registry.");
             // Store dynamically in browser session profile store
-            const dynamicId = speakerId.startsWith('VX-') ? speakerId : `VX-${Math.floor(1000 + Math.random() * 9000)}`;
+            const displayId = speakerId && speakerId.startsWith('VX-') ? speakerId : `VX-${Math.floor(1000 + Math.random() * 9000)}`;
             const profiles = JSON.parse(localStorage.getItem('callshadow_profiles') || localStorage.getItem('vocalshield_profiles') || '[]');
             profiles.unshift({
-                profileId: dynamicId,
-                speakerName: speakerId,
+                profileId: displayId,
+                speakerName: speakerId || 'User',
                 enrolledAt: new Date().toISOString(),
                 sampleFile: audioFile.name
             });
@@ -135,28 +136,23 @@ class ApiService {
 
             return {
                 success: true,
-                message: `Voice Identity registered locally as Profile ID '${dynamicId}'.`,
-                profileId: dynamicId,
+                message: `Voice Identity registered locally as Profile ID '${displayId}'.`,
+                profileId: displayId,
                 isBackend: false
             };
         }
     }
 
     // ------------------------------------------------------------------------
-    // Real Authentication API Methods
+    // Real Authentication API Methods (HttpOnly Cookie-driven)
     // ------------------------------------------------------------------------
     getAuthToken() {
-        return localStorage.getItem('callshadow_auth_token') || sessionStorage.getItem('callshadow_auth_token') || localStorage.getItem('vocalshield_auth_token') || sessionStorage.getItem('vocalshield_auth_token') || "";
+        // Tokens are securely held exclusively in HttpOnly cookies to prevent XSS exfiltration
+        return "";
     }
 
     setAuthToken(token, remember = true) {
-        if (token) {
-            if (remember) {
-                localStorage.setItem('callshadow_auth_token', token);
-            } else {
-                sessionStorage.setItem('callshadow_auth_token', token);
-            }
-        }
+        // No-op on frontend: session tokens are stored exclusively via HttpOnly cookies
     }
 
     clearAuth() {
@@ -171,14 +167,9 @@ class ApiService {
     }
 
     getAuthHeaders() {
-        const token = this.getAuthToken();
-        const headers = {
+        return {
             'Content-Type': 'application/json'
         };
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        return headers;
     }
 
     async register(fullName, email, password, confirmPassword) {
@@ -188,6 +179,7 @@ class ApiService {
         try {
             const res = await fetch(url, {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     full_name: fullName,
@@ -214,8 +206,7 @@ class ApiService {
                 throw new Error(errorMsg);
             }
 
-            if (data.token) {
-                this.setAuthToken(data.token, true);
+            if (data.user) {
                 localStorage.setItem('callshadow_auth_user', JSON.stringify(data.user));
             }
             return data;
@@ -235,6 +226,7 @@ class ApiService {
         try {
             const res = await fetch(url, {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: email,
@@ -257,8 +249,7 @@ class ApiService {
                 throw new Error(errorMsg);
             }
 
-            if (data.token) {
-                this.setAuthToken(data.token, true);
+            if (data.user) {
                 localStorage.setItem('callshadow_auth_user', JSON.stringify(data.user));
             }
             return data;
@@ -276,6 +267,7 @@ class ApiService {
             const url = `${this.getBaseUrl()}/api/auth/logout`;
             await fetch(url, {
                 method: 'POST',
+                credentials: 'include',
                 headers: this.getAuthHeaders()
             });
         } catch (err) {
@@ -287,13 +279,11 @@ class ApiService {
     }
 
     async getProfile() {
-        const token = this.getAuthToken();
-        if (!token) return null;
-
         try {
             const url = `${this.getBaseUrl()}/api/auth/me`;
             const res = await fetch(url, {
                 method: 'GET',
+                credentials: 'include',
                 headers: this.getAuthHeaders()
             });
 
@@ -318,6 +308,7 @@ class ApiService {
         const url = `${this.getBaseUrl()}/api/auth/forgot-password`;
         const res = await fetch(url, {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: email })
         });
@@ -333,6 +324,7 @@ class ApiService {
         const url = `${this.getBaseUrl()}/api/auth/reset-password`;
         const res = await fetch(url, {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 token: token,

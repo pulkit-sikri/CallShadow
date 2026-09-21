@@ -23,6 +23,7 @@ class User(Base):
 
     sessions = relationship("SessionToken", back_populates="user", cascade="all, delete-orphan")
     analyses = relationship("AnalysisLog", back_populates="user")
+    voiceprint = relationship("Voiceprint", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 class SessionToken(Base):
     __tablename__ = "session_tokens"
@@ -33,6 +34,17 @@ class SessionToken(Base):
     expires_at = Column(DateTime, nullable=False)
 
     user = relationship("User", back_populates="sessions")
+
+class Voiceprint(Base):
+    __tablename__ = "voiceprints"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    embedding = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="voiceprint")
 
 class AnalysisLog(Base):
     __tablename__ = "analysis_logs"
@@ -62,6 +74,30 @@ def init_db():
             if "user_id" not in columns:
                 cursor.execute("ALTER TABLE analysis_logs ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;")
                 conn.connection.commit()
+
+            # Clean up / migrate legacy unhashed session tokens (SHA-256 hex is exactly 64 characters)
+            cursor.execute("DELETE FROM session_tokens WHERE length(token) != 64;")
+            cursor.execute("UPDATE users SET reset_token = NULL WHERE reset_token IS NOT NULL AND length(reset_token) != 64;")
+            conn.connection.commit()
+
+            # Safe migration and deduplication for voiceprints table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS voiceprints (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                    embedding TEXT NOT NULL,
+                    created_at DATETIME,
+                    updated_at DATETIME
+                );
+            """)
+            cursor.execute("""
+                DELETE FROM voiceprints 
+                WHERE id NOT IN (
+                    SELECT MAX(id) FROM voiceprints GROUP BY user_id
+                );
+            """)
+            cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_voiceprints_user_id ON voiceprints(user_id);")
+            conn.connection.commit()
     except Exception as exc:
         print(f"[DB Notice] Schema migration check: {exc}")
 

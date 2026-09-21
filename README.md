@@ -1,4 +1,4 @@
-﻿# 🛡️ CallShadow — Real-Time Voice Biometrics & Deepfake Defense
+# 🛡️ CallShadow — Real-Time Voice Biometrics & Deepfake Defense
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg?logo=python)](https://www.python.org/)
@@ -149,7 +149,7 @@ cp .env.example .env
 python main.py
 `
 * The backend API server will start on http://localhost:8000.
-* Interactive Swagger Docs: http://localhost:8000/docs
+* Interactive Swagger Docs: http://localhost:8000/docs (available when DEBUG=True)
 * Health Check: http://localhost:8000/api/health
 
 ---
@@ -207,7 +207,7 @@ npm start
 - **ReportLab** (Dynamic PDF audit certificate engine)
 
 ### Mobile & Frontend
-- **React Native** & **Expo SDK 51** (Cross-platform mobile)
+- **React Native** & **Expo SDK 57** (Cross-platform mobile)
 - **TypeScript** & **Zustand** (Predictable reactive state management)
 - **HTML5 WebAudio API & Canvas** (Real-time frequency & waveform rendering)
 
