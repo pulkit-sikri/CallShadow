@@ -1,0 +1,11 @@
+﻿.git/
+.github/
+.pytest_cache/
+**/__pycache__/
+**/*.pyc
+mobile/node_modules/
+mobile/.expo/
+.tmpvenv/
+*.db
+*.sqlite
+*.log
