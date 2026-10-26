@@ -40,5 +40,5 @@ aiofiles~=23.1.0
 sqlalchemy~=2.0.52
 
 # --- PDF / Reporting ---
-reportlab~=5.0.1
+reportlab~=5.1.0
 python-multipart
