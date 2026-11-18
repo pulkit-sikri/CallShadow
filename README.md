@@ -72,7 +72,7 @@ CallShadow calculates a multi-factor **Trust Score** across three dedicated anal
 
 ---
 
-## 📂 Monorepo Structure
+## Monorepo Structure
 
 ` ext
 CallShadow/
